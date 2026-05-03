@@ -76,7 +76,7 @@ let saves = 0;
 let gameActive = true;
 let messageTimer = null;
 
-// mouse control
+// move goalie with mouse
 document.addEventListener("mousemove", (e) => {
   let x = e.clientX;
 
@@ -89,11 +89,12 @@ document.addEventListener("mousemove", (e) => {
   goalie.style.left = x + "px";
 });
 
+// get goal bounds
 function getGoal() {
   return document.querySelector(".goal").getBoundingClientRect();
 }
 
-// SHOW SAVE MESSAGE FOR 1 SECOND ONLY
+// show SAVED message (1 second only)
 function showSaveMessage() {
   message.textContent = "🧤 SAVED";
 
@@ -103,7 +104,7 @@ function showSaveMessage() {
   }, 1000);
 }
 
-// BALL SHOOT
+// BALL SHOOT (FORCED INSIDE GOAL)
 function shootBall() {
   if (!gameActive) return;
 
@@ -116,7 +117,12 @@ function shootBall() {
   ball.style.top = y + "px";
   ball.style.opacity = "1";
 
-  const targetX = goal.left + Math.random() * (goal.right - goal.left);
+  // 🔒 STRICT RULE: ALWAYS inside goal posts
+  const padding = 20; // keeps ball safely inside posts
+  const minX = goal.left + padding;
+  const maxX = goal.right - padding;
+
+  const targetX = minX + Math.random() * (maxX - minX);
 
   let speedY = 7;
   let speedX = (targetX - x) / 60;
@@ -132,7 +138,7 @@ function shootBall() {
     const goalieRect = goalie.getBoundingClientRect();
     const ballRect = ball.getBoundingClientRect();
 
-    // SAVE DETECTED
+    // SAVE DETECTION
     const save =
       ballRect.top <= goalieRect.bottom &&
       ballRect.left < goalieRect.right &&
@@ -146,7 +152,7 @@ function shootBall() {
 
       showSaveMessage();
 
-      // reflect ball upward then hide
+      // reflect + disappear
       ball.style.top = (y + 80) + "px";
 
       setTimeout(() => {
@@ -159,7 +165,7 @@ function shootBall() {
       return;
     }
 
-    // GOAL AREA REACHED
+    // reached goal line (always inside now = goal guaranteed if not saved)
     if (y <= goal.top) {
       clearInterval(interval);
 
@@ -171,7 +177,7 @@ function shootBall() {
   }, 20);
 }
 
-// WIN CONDITION
+// win condition
 function checkWin() {
   if (saves >= 3) {
     gameActive = false;
@@ -179,7 +185,7 @@ function checkWin() {
   }
 }
 
-// START GAME
+// start
 shootBall();
 
 </script>
