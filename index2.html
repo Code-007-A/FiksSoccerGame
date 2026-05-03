@@ -1,1 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Soccer Save Game</title>
 
+<style>
+  body {
+    margin: 0;
+    background: #0b6623;
+    overflow: hidden;
+    font-family: Arial;
+  }
+
+  .goal {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 700px;
+    height: 160px;
+    border: 4px solid white;
+  }
+
+  #goalie {
+    position: absolute;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+  }
+
+  #ball {
+    position: absolute;
+    width: 35px;
+    height: 35px;
+  }
+
+  #message {
+    position: absolute;
+    top: 200px;
+    width: 100%;
+    text-align: center;
+    font-size: 32px;
+    color: white;
+  }
+
+  #counter {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 22px;
+    color: white;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="goal"></div>
+
+<img id="goalie" src="goalie.png" alt="Goalie">
+<img id="ball" src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg" alt="Ball">
+
+<div id="message"></div>
+<div id="counter">Saves: 0</div>
+
+<script>
+
+const goalie = document.getElementById("goalie");
+const ball = document.getElementById("ball");
+const message = document.getElementById("message");
+const counterText = document.getElementById("counter");
+
+let saves = 0;
+let gameActive = true;
+let messageTimer = null;
+
+// SAFE mouse control
+document.addEventListener("mousemove", (e) => {
+  let x = e.clientX;
+
+  const min = 80;
+  const max = window.innerWidth - 80;
+
+  x = Math.max(min, Math.min(max, x));
+
+  goalie.style.left = x + "px";
+});
+
+// get goal safely
+function getGoal() {
+  const g = document.querySelector(".goal");
+  if (!g) return null;
+  return g.getBoundingClientRect();
+}
+
+// show SAVE message (1 sec)
+function showSaveMessage() {
+  message.textContent = "🧤 SAVED";
+
+  clearTimeout(messageTimer);
+  messageTimer = setTimeout(() => {
+    message.textContent = "";
+  }, 1000);
+}
+
+// MAIN SHOOT FUNCTION
+function shootBall() {
+  if (!gameActive) return;
+
+  const goal = getGoal();
+  if (!goal) return;
+
+  let x = window.innerWidth / 2;
+  let y = window.innerHeight - 60;
+
+  ball.style.opacity = "1";
+
+  const padding = 10;
+
+  const minX = goal.left + padding;
+  const maxX = goal.right - padding;
+
+  const targetX = minX + Math.random() * (maxX - minX);
+
+  let speedY = 7;
+  let speedX = (targetX - x) / 60;
+
+  const interval = setInterval(() => {
+
+    y -= speedY;
+    x += speedX;
+
+    // HARD LOCK inside posts
+    if (x < minX) x = minX;
+    if (x > maxX) x = maxX;
+
+    ball.style.top = y + "px";
+    ball.style.left = x + "px";
+
+    const goalieRect = goalie.getBoundingClientRect();
+    const ballRect = ball.getBoundingClientRect();
+
+    const save =
+      ballRect.top <= goalieRect.bottom &&
+      ballRect.left < goalieRect.right &&
+      ballRect.right > goalieRect.left;
+
+    if (save) {
+      clearInterval(interval);
+
+      saves++;
+      counterText.textContent = "Saves: " + saves;
+
+      showSaveMessage();
+
+      ball.style.top = (y + 80) + "px";
+
+      setTimeout(() => {
+        ball.style.opacity = "0";
+      }, 200);
+
+      checkWin();
+
+      setTimeout(shootBall, 900);
+      return;
+    }
+
+    if (goal && y <= goal.top) {
+      clearInterval(interval);
+
+      ball.style.opacity = "0";
+
+      setTimeout(shootBall, 900);
+    }
+
+  }, 20);
+}
+
+// WIN CHECK
+function checkWin() {
+  if (saves >= 3) {
+    gameActive = false;
+    message.textContent = "🎉 Happy Birthday, Fiks!";
+  }
+}
+
+// START GAME AFTER LOAD
+window.onload = () => {
+  shootBall();
+};
+
+</script>
+
+</body>
+</html>
