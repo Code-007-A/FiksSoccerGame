@@ -146,13 +146,38 @@ function spawnBall() {
     ball.style.top = ballY + "px";
 }
 
+function resolveShot(type) {
+    if (shotResolved || gameOver) return;
+
+    shotResolved = true;
+
+    if (type === "save") {
+        saves++;
+        updateScore();
+
+        message.textContent = "Great Save! 🧤";
+        message.style.display = "block";
+
+        if (saves === 3) {
+            gameOver = true;
+            message.textContent = "You Win! 🏆";
+            return;
+        }
+    } else {
+        message.textContent = "Missed! ⚽";
+        message.style.display = "block";
+    }
+
+    setTimeout(() => {
+        if (!gameOver) {
+            message.style.display = "none";
+            spawnBall();
+        }
+    }, 600);
+}
+
 function update() {
     if (gameOver) return;
-
-    const goalieRect = goalie.getBoundingClientRect();
-    const ballRect = ball.getBoundingClientRect();
-
-    const bounds = getGoalBounds();
 
     ballX += dx;
     ballY += dy;
@@ -163,42 +188,21 @@ function update() {
     ball.style.left = ballX + "px";
     ball.style.top = ballY + "px";
 
-    // SAVE
+    const goalieRect = goalie.getBoundingClientRect();
+    const ballRect = ball.getBoundingClientRect();
+
+    // SAVE CHECK (recomputed every frame)
     if (!shotResolved &&
         ballRect.bottom >= goalieRect.top &&
         ballRect.left < goalieRect.right &&
         ballRect.right > goalieRect.left
     ) {
-        shotResolved = true;
-        saves++;
-        updateScore();
-
-        message.textContent = "Great Save! 🧤";
-        message.style.display = "block";
-
-        if (saves >= 3) {
-            gameOver = true;
-            message.textContent = "You Win! 🏆";
-            return;
-        }
-
-        setTimeout(() => {
-            message.style.display = "none";
-            spawnBall();
-        }, 600);
+        resolveShot("save");
     }
 
-    // MISS
+    // MISS CHECK
     if (!shotResolved && ballY > window.innerHeight) {
-        shotResolved = true;
-
-        message.textContent = "Missed! ⚽";
-        message.style.display = "block";
-
-        setTimeout(() => {
-            message.style.display = "none";
-            spawnBall();
-        }, 600);
+        resolveShot("miss");
     }
 
     requestAnimationFrame(update);
