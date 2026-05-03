@@ -41,8 +41,9 @@
     top: 200px;
     width: 100%;
     text-align: center;
-    font-size: 32px;
+    font-size: 36px;
     color: white;
+    z-index: 10;
   }
 
   #counter {
@@ -52,6 +53,22 @@
     font-size: 22px;
     color: white;
   }
+
+  /* CONFETTI */
+  .confetti {
+    position: absolute;
+    top: -20px;
+    width: 8px;
+    height: 12px;
+    opacity: 0.9;
+    animation: fall linear forwards;
+  }
+
+  @keyframes fall {
+    to {
+      transform: translateY(110vh) rotate(360deg);
+    }
+  }
 </style>
 </head>
 
@@ -59,11 +76,11 @@
 
 <div class="goal"></div>
 
-<img id="goalie" src="goalie.png" alt="Goalie">
-<img id="ball" src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg" alt="Ball">
+<img id="goalie" src="goalie.png">
+<img id="ball" src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg">
 
 <div id="message"></div>
-<div id="counter">Saves: 0</div>
+<div id="counter">Saves: 0/3</div>
 
 <script>
 
@@ -76,7 +93,7 @@ let saves = 0;
 let gameActive = true;
 let messageTimer = null;
 
-// SAFE mouse control
+// mouse control
 document.addEventListener("mousemove", (e) => {
   let x = e.clientX;
 
@@ -88,29 +105,45 @@ document.addEventListener("mousemove", (e) => {
   goalie.style.left = x + "px";
 });
 
-// get goal safely
+// goal bounds
 function getGoal() {
-  const g = document.querySelector(".goal");
-  if (!g) return null;
-  return g.getBoundingClientRect();
+  return document.querySelector(".goal").getBoundingClientRect();
 }
 
-// show SAVE message (1 sec)
+// SAVE MESSAGE (1 sec)
 function showSaveMessage() {
   message.textContent = "🧤 SAVED";
 
   clearTimeout(messageTimer);
   messageTimer = setTimeout(() => {
-    message.textContent = "";
+    if (gameActive) message.textContent = "";
   }, 1000);
 }
 
-// MAIN SHOOT FUNCTION
+// CONFETTI SYSTEM (BLACK & WHITE)
+function spawnConfetti() {
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement("div");
+    c.className = "confetti";
+
+    c.style.left = Math.random() * window.innerWidth + "px";
+
+    // black & white only
+    c.style.background = Math.random() > 0.5 ? "black" : "white";
+
+    c.style.animationDuration = (2 + Math.random() * 3) + "s";
+
+    document.body.appendChild(c);
+
+    setTimeout(() => c.remove(), 5000);
+  }
+}
+
+// BALL SHOOT
 function shootBall() {
   if (!gameActive) return;
 
   const goal = getGoal();
-  if (!goal) return;
 
   let x = window.innerWidth / 2;
   let y = window.innerHeight - 60;
@@ -118,7 +151,6 @@ function shootBall() {
   ball.style.opacity = "1";
 
   const padding = 10;
-
   const minX = goal.left + padding;
   const maxX = goal.right - padding;
 
@@ -132,7 +164,6 @@ function shootBall() {
     y -= speedY;
     x += speedX;
 
-    // HARD LOCK inside posts
     if (x < minX) x = minX;
     if (x > maxX) x = maxX;
 
@@ -151,7 +182,8 @@ function shootBall() {
       clearInterval(interval);
 
       saves++;
-      counterText.textContent = "Saves: " + saves;
+
+      counterText.textContent = `Saves: ${saves}/3`;
 
       showSaveMessage();
 
@@ -169,24 +201,26 @@ function shootBall() {
 
     if (goal && y <= goal.top) {
       clearInterval(interval);
-
       ball.style.opacity = "0";
-
       setTimeout(shootBall, 900);
     }
 
   }, 20);
 }
 
-// WIN CHECK
+// WIN CONDITION
 function checkWin() {
-  if (saves >= 3) {
+  if (saves >= 3 && gameActive) {
     gameActive = false;
+
+    counterText.textContent = "Saves: 3/3";
     message.textContent = "🎉 Happy Birthday, Fiks!";
+
+    spawnConfetti();
   }
 }
 
-// START GAME AFTER LOAD
+// start game
 window.onload = () => {
   shootBall();
 };
