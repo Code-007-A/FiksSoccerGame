@@ -40,7 +40,7 @@
         border-radius: 10px;
     }
 
-    .ball {
+    #ball {
         position: absolute;
         width: 25px;
         height: 25px;
@@ -57,6 +57,14 @@
         color: white;
         display: none;
     }
+
+    #score {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        font-size: 20px;
+    }
 </style>
 </head>
 <body>
@@ -64,29 +72,39 @@
 <div id="field">
     <div id="goal"></div>
     <div id="goalie"></div>
-    <div id="message">Congratulations! You Won 🎉</div>
+    <div id="ball"></div>
+    <div id="message">You Win! 🏆</div>
+    <div id="score"></div>
 </div>
 
 <script>
 const field = document.getElementById("field");
 const goalie = document.getElementById("goalie");
+const ball = document.getElementById("ball");
 const message = document.getElementById("message");
-
-let gameOver = false;
+const scoreDisplay = document.getElementById("score");
 
 let fieldWidth = field.clientWidth;
 const goalieWidth = 80;
+
 let goalieX = fieldWidth / 2 - goalieWidth / 2;
+
+let ballX = 0;
+let ballY = 0;
+let dx = 0;
+let dy = 0;
+
+let saves = 0;
+let gameOver = false;
 
 goalie.style.left = goalieX + "px";
 
-window.addEventListener("resize", () => {
-    fieldWidth = field.clientWidth;
-    goalieX = Math.max(0, Math.min(fieldWidth - goalieWidth, goalieX));
-    goalie.style.left = goalieX + "px";
-});
+function updateScore() {
+    scoreDisplay.textContent = "Saves: " + saves + " / 3";
+}
+updateScore();
 
-// mouse wheel control (kept)
+// move goalie
 document.addEventListener("wheel", (e) => {
     if (gameOver) return;
 
@@ -99,67 +117,80 @@ document.addEventListener("wheel", (e) => {
     goalie.style.left = goalieX + "px";
 }, { passive: false });
 
-// BALL SYSTEM
-let balls = [];
+window.addEventListener("resize", () => {
+    fieldWidth = field.clientWidth;
+});
 
 function spawnBall() {
-    if (gameOver) return;
+    ballX = Math.random() * (fieldWidth - 30);
+    ballY = 0;
 
-    const ball = document.createElement("div");
-    ball.classList.add("ball");
-    field.appendChild(ball);
+    dx = (Math.random() - 0.5) * 4;
+    dy = 3 + Math.random() * 2;
 
-    const startX = Math.random() * (fieldWidth - 30);
-
-    balls.push({
-        el: ball,
-        x: startX,
-        y: 0,
-        dx: (Math.random() - 0.5) * 3,
-        dy: 3 + Math.random() * 2
-    });
+    ball.style.left = ballX + "px";
+    ball.style.top = ballY + "px";
 }
 
-setInterval(spawnBall, 500);
+function checkCollision(ballRect, goalieRect) {
+    return (
+        ballRect.bottom >= goalieRect.top &&
+        ballRect.left < goalieRect.right &&
+        ballRect.right > goalieRect.left
+    );
+}
 
 function update() {
     if (gameOver) return;
 
     const goalieRect = goalie.getBoundingClientRect();
 
-    balls.forEach((b, index) => {
-        b.x += b.dx;
-        b.y += b.dy;
+    ballX += dx;
+    ballY += dy;
 
-        // slight curve change
-        b.dx += (Math.random() - 0.5) * 0.2;
-        b.dx = Math.max(-4, Math.min(4, b.dx));
+    dx += (Math.random() - 0.5) * 0.15;
+    dx = Math.max(-4, Math.min(4, dx));
 
-        b.el.style.left = b.x + "px";
-        b.el.style.top = b.y + "px";
+    ball.style.left = ballX + "px";
+    ball.style.top = ballY + "px";
 
-        const ballRect = b.el.getBoundingClientRect();
+    const ballRect = ball.getBoundingClientRect();
 
-        // collision with goalie
-        if (
-            ballRect.bottom >= goalieRect.top &&
-            ballRect.left < goalieRect.right &&
-            ballRect.right > goalieRect.left
-        ) {
+    // SAVE
+    if (checkCollision(ballRect, goalieRect)) {
+        saves++;
+        updateScore();
+
+        message.textContent = "Great Save! 🧤";
+        message.style.display = "block";
+
+        if (saves >= 3) {
             gameOver = true;
-            message.style.display = "block";
+            message.textContent = "You Win! 🏆";
+            return;
         }
 
-        // remove if off screen
-        if (b.y > window.innerHeight) {
-            b.el.remove();
-            balls.splice(index, 1);
-        }
-    });
+        setTimeout(() => {
+            message.style.display = "none";
+            spawnBall();
+        }, 600);
+    }
+
+    // MISS
+    if (ballY > window.innerHeight) {
+        message.textContent = "Missed! ⚽";
+        message.style.display = "block";
+
+        setTimeout(() => {
+            message.style.display = "none";
+            spawnBall();
+        }, 600);
+    }
 
     requestAnimationFrame(update);
 }
 
+spawnBall();
 update();
 </script>
 
