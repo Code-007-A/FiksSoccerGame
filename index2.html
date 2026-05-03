@@ -22,11 +22,13 @@
     border: 4px solid white;
   }
 
+  /* 🧤 40% WIDER GOALIE */
   #goalie {
     position: absolute;
     top: 70px;
-    width: 120px;
+    left: 50%;
     transform: translateX(-50%);
+    width: 168px; /* 120px → +40% = 168px */
   }
 
   #ball {
@@ -52,19 +54,6 @@
     color: white;
   }
 
-  .confetti {
-    position: absolute;
-    top: -20px;
-    width: 8px;
-    height: 12px;
-    animation: fall linear forwards;
-  }
-
-  @keyframes fall {
-    to {
-      transform: translateY(110vh) rotate(360deg);
-    }
-  }
 </style>
 </head>
 
@@ -81,25 +70,20 @@
 <script>
 
 const goalie = document.getElementById("goalie");
-const ball = document.getElementById("ball");
 const goal = document.querySelector(".goal");
-const message = document.getElementById("message");
-const counterText = document.getElementById("counter");
 
-let saves = 0;
-let gameActive = true;
 let goalieX = window.innerWidth / 2;
 
-// ⚽ GET GOAL BOUNDARIES
+// 🧠 GET GOAL BOUNDS
 function getGoalBounds() {
   return goal.getBoundingClientRect();
 }
 
-// 🧤 INIT POSITION
-function updateGoaliePosition(x) {
+// 🧤 UPDATE POSITION (LOCKED INSIDE POSTS)
+function moveGoalie(x) {
   const bounds = getGoalBounds();
 
-  const goalieWidth = 120;
+  const goalieWidth = goalie.offsetWidth;
 
   // 🚫 LEFT POST LIMIT
   const minX = bounds.left + goalieWidth / 2;
@@ -107,13 +91,12 @@ function updateGoaliePosition(x) {
   // 🚫 RIGHT POST LIMIT
   const maxX = bounds.right - goalieWidth / 2;
 
-  // clamp inside goal
   goalieX = Math.max(minX, Math.min(maxX, x));
 
   goalie.style.left = goalieX + "px";
 }
 
-// 🎮 SCROLL CONTROL (LEFT / RIGHT ONLY INSIDE GOAL)
+// 🎮 SCROLL CONTROL
 window.addEventListener("wheel", (e) => {
   const speed = 25;
 
@@ -123,106 +106,16 @@ window.addEventListener("wheel", (e) => {
     goalieX += speed;
   }
 
-  updateGoaliePosition(goalieX);
+  moveGoalie(goalieX);
 });
 
-// initialize goalie inside goal
+// INIT POSITION
 window.onload = () => {
   const bounds = getGoalBounds();
   goalieX = (bounds.left + bounds.right) / 2;
-  updateGoaliePosition(goalieX);
 
-  shootBall();
+  moveGoalie(goalieX);
 };
-
-// 🧠 GOAL LOGIC
-function getGoal() {
-  return document.querySelector(".goal").getBoundingClientRect();
-}
-
-function showSaveMessage() {
-  message.textContent = "🧤 SAVED";
-  setTimeout(() => message.textContent = "", 1000);
-}
-
-// 🎉 CONFETTI
-function spawnConfetti() {
-  for (let i = 0; i < 80; i++) {
-    const c = document.createElement("div");
-    c.className = "confetti";
-    c.style.left = Math.random() * window.innerWidth + "px";
-    c.style.background = Math.random() > 0.5 ? "black" : "white";
-    c.style.animationDuration = (2 + Math.random() * 3) + "s";
-    document.body.appendChild(c);
-    setTimeout(() => c.remove(), 5000);
-  }
-}
-
-// ⚽ BALL
-function shootBall() {
-  if (!gameActive) return;
-
-  const goal = getGoal();
-
-  let x = window.innerWidth / 2;
-  let y = window.innerHeight - 60;
-
-  ball.style.opacity = "1";
-
-  const minX = goal.left + 10;
-  const maxX = goal.right - 10;
-  const targetX = minX + Math.random() * (maxX - minX);
-
-  let speedY = 25;
-  let speedX = (targetX - x) / 60;
-
-  const interval = setInterval(() => {
-
-    y -= speedY;
-    x += speedX;
-
-    ball.style.top = y + "px";
-    ball.style.left = x + "px";
-
-    const ballRect = ball.getBoundingClientRect();
-    const goalieRect = goalie.getBoundingClientRect();
-
-    const goalieFeetLine = goalieRect.bottom;
-
-    const beforeFeet = ballRect.bottom < goalieFeetLine;
-
-    const touching =
-      ballRect.left < goalieRect.right &&
-      ballRect.right > goalieRect.left;
-
-    if (beforeFeet && touching) {
-      clearInterval(interval);
-
-      saves++;
-      counterText.textContent = `Saves: ${saves}/3`;
-
-      showSaveMessage();
-
-      ball.style.opacity = "0";
-
-      if (saves >= 3) {
-        gameActive = false;
-        message.textContent = "🎉 Happy Birthday, Fiks!";
-        spawnConfetti();
-      }
-
-      setTimeout(shootBall, 900);
-      return;
-    }
-
-    if (y <= goal.top) {
-      clearInterval(interval);
-      ball.style.opacity = "0";
-      setTimeout(shootBall, 900);
-    }
-
-  }, 20);
-}
 
 </script>
 
