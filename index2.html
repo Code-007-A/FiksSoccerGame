@@ -2,62 +2,133 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Soccer Game</title>
+<title>Soccer Save Game</title>
 
 <style>
   body {
     margin: 0;
-    background: #0b6623; /* field green */
+    background: #0b6623;
     overflow: hidden;
   }
 
-  /* Goal area */
+  /* Goal frame */
   .goal {
     position: absolute;
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 300px;
-    height: 120px;
+    width: 320px;
+    height: 140px;
     border: 4px solid white;
   }
 
-  /* Goalie image */
+  /* Goalie */
   #goalie {
     position: absolute;
-    top: 40px;
+    top: 60px;
     left: 50%;
     transform: translateX(-50%);
     width: 120px;
-    transition: left 0.1s linear;
+    transition: left 0.08s linear;
+  }
+
+  /* Ball */
+  #ball {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    transform: translateX(-50%);
+  }
+
+  #message {
+    position: absolute;
+    top: 200px;
+    width: 100%;
+    text-align: center;
+    font-size: 28px;
+    color: white;
+    font-family: Arial;
   }
 </style>
 </head>
 
 <body>
 
-<!-- Goal frame -->
 <div class="goal"></div>
 
-<!-- Goalie -->
 <img id="goalie" src="goalie.png" alt="Goalie">
+<img id="ball" src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg" alt="Ball">
+
+<div id="message"></div>
 
 <script>
-  // Simple movement: follow mouse left/right
-  const goalie = document.getElementById("goalie");
+const goalie = document.getElementById("goalie");
+const ball = document.getElementById("ball");
+const message = document.getElementById("message");
 
-  document.addEventListener("mousemove", (e) => {
-    let x = e.clientX;
+// Move goalie with mouse
+document.addEventListener("mousemove", (e) => {
+  let x = e.clientX;
 
-    // keep within screen bounds
-    const min = 60;
-    const max = window.innerWidth - 60;
+  const min = 60;
+  const max = window.innerWidth - 60;
 
-    if (x < min) x = min;
-    if (x > max) x = max;
+  if (x < min) x = min;
+  if (x > max) x = max;
 
-    goalie.style.left = x + "px";
-  });
+  goalie.style.left = x + "px";
+});
+
+// Ball shooting animation
+function shootBall() {
+  let y = window.innerHeight - 60;
+  let x = window.innerWidth / 2;
+
+  ball.style.left = x + "px";
+  ball.style.top = y + "px";
+
+  const interval = setInterval(() => {
+    y -= 8; // speed of ball
+
+    ball.style.top = y + "px";
+
+    // Goalie position
+    const goalieRect = goalie.getBoundingClientRect();
+    const ballRect = ball.getBoundingClientRect();
+
+    // Collision detection
+    const hit =
+      ballRect.top <= goalieRect.bottom &&
+      ballRect.left < goalieRect.right &&
+      ballRect.right > goalieRect.left;
+
+    if (hit) {
+      clearInterval(interval);
+      message.textContent = "🧤 SAVE!";
+      resetBall();
+      setTimeout(shootBall, 1200);
+    }
+
+    // Goal scored
+    if (y < 20) {
+      clearInterval(interval);
+      message.textContent = "⚽ GOAL!";
+      resetBall();
+      setTimeout(shootBall, 1200);
+    }
+
+  }, 30);
+}
+
+function resetBall() {
+  ball.style.top = "";
+  message.textContent = "";
+}
+
+// Start game
+shootBall();
 </script>
 
 </body>
