@@ -12,13 +12,12 @@
     font-family: Arial;
   }
 
-  /* GOAL (WIDER) */
   .goal {
     position: absolute;
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 700px;   /* widened goal */
+    width: 700px;
     height: 160px;
     border: 4px solid white;
   }
@@ -75,6 +74,7 @@ const counterText = document.getElementById("counter");
 
 let saves = 0;
 let gameActive = true;
+let messageTimer = null;
 
 // mouse control
 document.addEventListener("mousemove", (e) => {
@@ -89,9 +89,18 @@ document.addEventListener("mousemove", (e) => {
   goalie.style.left = x + "px";
 });
 
-// get goal bounds
 function getGoal() {
   return document.querySelector(".goal").getBoundingClientRect();
+}
+
+// SHOW SAVE MESSAGE FOR 1 SECOND ONLY
+function showSaveMessage() {
+  message.textContent = "🧤 SAVED";
+
+  clearTimeout(messageTimer);
+  messageTimer = setTimeout(() => {
+    message.textContent = "";
+  }, 1000);
 }
 
 // BALL SHOOT
@@ -135,10 +144,11 @@ function shootBall() {
       saves++;
       counterText.textContent = "Saves: " + saves;
 
-      message.textContent = "🧤 SAVE!";
+      showSaveMessage();
 
-      // reflect ball back (quick animation upward then disappear)
+      // reflect ball upward then hide
       ball.style.top = (y + 80) + "px";
+
       setTimeout(() => {
         ball.style.opacity = "0";
       }, 200);
@@ -149,11 +159,10 @@ function shootBall() {
       return;
     }
 
-    // GOAL / MISS CHECK
+    // GOAL AREA REACHED
     if (y <= goal.top) {
       clearInterval(interval);
 
-      message.textContent = "⚽ GOAL!";
       ball.style.opacity = "0";
 
       setTimeout(shootBall, 900);
@@ -170,7 +179,7 @@ function checkWin() {
   }
 }
 
-// start game
+// START GAME
 shootBall();
 
 </script>
