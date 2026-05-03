@@ -91,7 +91,7 @@ let messageTimer = null;
 
 goalie.style.left = goalieX + "px";
 
-// scroll control
+// scroll controls goalie
 window.addEventListener("wheel", (e) => {
   const speed = 25;
 
@@ -109,7 +109,7 @@ function getGoal() {
   return document.querySelector(".goal").getBoundingClientRect();
 }
 
-// SAVE MESSAGE
+// save message
 function showSaveMessage() {
   message.textContent = "🧤 SAVED";
   clearTimeout(messageTimer);
@@ -119,14 +119,16 @@ function showSaveMessage() {
   }, 1000);
 }
 
-// CONFETTI
+// confetti
 function spawnConfetti() {
   for (let i = 0; i < 80; i++) {
     const c = document.createElement("div");
     c.className = "confetti";
+
     c.style.left = Math.random() * window.innerWidth + "px";
     c.style.background = Math.random() > 0.5 ? "black" : "white";
     c.style.animationDuration = (2 + Math.random() * 3) + "s";
+
     document.body.appendChild(c);
     setTimeout(() => c.remove(), 5000);
   }
@@ -160,21 +162,21 @@ function shootBall() {
 
     const ballRect = ball.getBoundingClientRect();
     const goalieRect = goalie.getBoundingClientRect();
+    const goal = getGoal();
 
+    // 🔥 FIRST WHITE GOAL LINE (CRITICAL RULE)
     const goalLineY = goal.top + 40;
 
-    // ❗ CRITICAL FIX: once ball passes goalie feet → NO SAVE EVER
-    const beforeGoalieFeet = ballRect.bottom < goalieRect.bottom;
+    // ❗ ONCE PASSED LINE → NO SAVE ALLOWED EVER
+    const beforeGoalLine = ballRect.top > goalLineY;
 
-    const horizontalTouch =
+    // goalie collision
+    const touchingGoalie =
       ballRect.left < goalieRect.right &&
       ballRect.right > goalieRect.left;
 
-    const validSave =
-      beforeGoalieFeet &&
-      horizontalTouch;
-
-    if (validSave) {
+    // 🧤 ONLY VALID SAVE BEFORE LINE
+    if (touchingGoalie && beforeGoalLine) {
       clearInterval(interval);
 
       saves++;
@@ -192,7 +194,7 @@ function shootBall() {
       return;
     }
 
-    // goal reached = miss
+    // ball passed goal line → NO SAVE POSSIBLE
     if (ballRect.top <= goal.top) {
       clearInterval(interval);
       ball.style.opacity = "0";
