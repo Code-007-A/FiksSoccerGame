@@ -20,6 +20,7 @@
         background: linear-gradient(#0b6623, #0a5a1f);
     }
 
+    /* GOAL WITH NET EFFECT */
     #goal {
         position: absolute;
         bottom: 0;
@@ -35,42 +36,15 @@
         background-size: 10px 10px;
     }
 
+    /* GOALIE (PNG REPLACEMENT) */
     #goalie {
         position: absolute;
         bottom: 120px;
-        width: 40px;
-        height: 70px;
+        width: 80px;
+        height: 80px;
         left: 0;
-    }
-
-    #goalie::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 10px;
-        width: 20px;
-        height: 20px;
-        background: white;
-        border-radius: 50%;
-    }
-
-    #goalie::after {
-        content: "";
-        position: absolute;
-        top: 20px;
-        left: 16px;
-        width: 8px;
-        height: 30px;
-        background: white;
-    }
-
-    #goalie span {
-        position: absolute;
-        top: 28px;
-        left: 0;
-        width: 40px;
-        height: 6px;
-        background: white;
+        background: url('goalie.png') no-repeat center center;
+        background-size: contain;
     }
 
     #ball {
@@ -104,7 +78,7 @@
 
 <div id="field">
     <div id="goal"></div>
-    <div id="goalie"><span></span></div>
+    <div id="goalie"></div>
     <div id="ball"></div>
     <div id="message">You Win! 🏆</div>
     <div id="score"></div>
@@ -119,7 +93,7 @@ const message = document.getElementById("message");
 const scoreDisplay = document.getElementById("score");
 
 let fieldWidth = field.clientWidth;
-const goalieWidth = 40;
+const goalieWidth = 80;
 let goalieX = fieldWidth / 2;
 
 let ballX = 0;
@@ -165,7 +139,7 @@ window.addEventListener("resize", () => {
 function spawnBall() {
     const bounds = getGoalBounds();
 
-    const margin = 30; // keeps ball safely inside posts
+    const margin = 30;
 
     ballX = bounds.left + margin + Math.random() * (bounds.right - bounds.left - margin * 2 - 25);
     ballY = 0;
@@ -226,14 +200,13 @@ function update() {
     ballX += dx;
     ballY += dy;
 
-    // STRICT WALLS: always stay inside goal
     if (ballX <= bounds.left) {
         ballX = bounds.left;
-        dx = Math.abs(dx); // force right
+        dx = Math.abs(dx);
     }
     if (ballX >= bounds.right - 25) {
         ballX = bounds.right - 25;
-        dx = -Math.abs(dx); // force left
+        dx = -Math.abs(dx);
     }
 
     ball.style.left = ballX + "px";
