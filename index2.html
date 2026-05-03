@@ -20,6 +20,7 @@
         background: linear-gradient(#0b6623, #0a5a1f);
     }
 
+    /* goal is 25% wider than original */
     #goal {
         position: absolute;
         bottom: 0;
@@ -31,10 +32,11 @@
         border-bottom: none;
     }
 
+    /* goalie is now 50% wider */
     #goalie {
         position: absolute;
         bottom: 120px;
-        width: 80px;
+        width: 120px;
         height: 20px;
         background: white;
         border-radius: 10px;
@@ -79,14 +81,15 @@
 
 <script>
 const field = document.getElementById("field");
+const goal = document.getElementById("goal");
 const goalie = document.getElementById("goalie");
 const ball = document.getElementById("ball");
 const message = document.getElementById("message");
 const scoreDisplay = document.getElementById("score");
 
 let fieldWidth = field.clientWidth;
-const goalieWidth = 80;
 
+const goalieWidth = 120;
 let goalieX = fieldWidth / 2 - goalieWidth / 2;
 
 let ballX = 0;
@@ -114,7 +117,7 @@ function getGoalBounds() {
     };
 }
 
-// wheel control
+// goalie control
 document.addEventListener("wheel", (e) => {
     if (gameOver) return;
 
@@ -179,8 +182,22 @@ function resolveShot(type) {
 function update() {
     if (gameOver) return;
 
+    const goalieRect = goalie.getBoundingClientRect();
+    const ballRect = ball.getBoundingClientRect();
+    const bounds = getGoalBounds();
+
     ballX += dx;
     ballY += dy;
+
+    // keep ball inside goal posts
+    if (ballX < bounds.left) {
+        ballX = bounds.left;
+        dx *= -1;
+    }
+    if (ballX > bounds.right - 25) {
+        ballX = bounds.right - 25;
+        dx *= -1;
+    }
 
     dx += (Math.random() - 0.5) * 0.1;
     dx = Math.max(-3, Math.min(3, dx));
@@ -188,10 +205,6 @@ function update() {
     ball.style.left = ballX + "px";
     ball.style.top = ballY + "px";
 
-    const goalieRect = goalie.getBoundingClientRect();
-    const ballRect = ball.getBoundingClientRect();
-
-    // SAVE CHECK (recomputed every frame)
     if (!shotResolved &&
         ballRect.bottom >= goalieRect.top &&
         ballRect.left < goalieRect.right &&
@@ -200,7 +213,6 @@ function update() {
         resolveShot("save");
     }
 
-    // MISS CHECK
     if (!shotResolved && ballY > window.innerHeight) {
         resolveShot("miss");
     }
