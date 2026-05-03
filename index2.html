@@ -113,7 +113,7 @@ function getGoal() {
   return document.querySelector(".goal").getBoundingClientRect();
 }
 
-// save message
+// message
 function showSaveMessage() {
   message.textContent = "🧤 SAVED";
 
@@ -172,18 +172,20 @@ function shootBall() {
     const goalieRect = goalie.getBoundingClientRect();
     const ballRect = ball.getBoundingClientRect();
 
-    // 🔥 SAVE LINE (CRITICAL RULE)
+    const goal = getGoal();
+
+    // 🔥 THIS IS THE KEY FIX
     const saveLineY = goal.top + 40;
 
-    const validSaveZone = y > saveLineY; // must save BEFORE line
+    const beforeLine = y > saveLineY; // ONLY ALLOW SAVE HERE
 
-    const touchedGoalie =
+    const touchingGoalie =
       ballRect.top <= goalieRect.bottom &&
       ballRect.left < goalieRect.right &&
       ballRect.right > goalieRect.left;
 
-    // ONLY VALID SAVE IF BEFORE LINE
-    if (touchedGoalie && validSaveZone) {
+    // 🧤 ONLY VALID SAVE IF BEFORE LINE
+    if (touchingGoalie && beforeLine) {
       clearInterval(interval);
 
       saves++;
@@ -203,7 +205,7 @@ function shootBall() {
       return;
     }
 
-    // GOAL LINE PASSED → NO SAVE ALLOWED
+    // once past goal line → NO SAVE POSSIBLE ANYMORE
     if (y <= goal.top) {
       clearInterval(interval);
       ball.style.opacity = "0";
@@ -213,7 +215,7 @@ function shootBall() {
   }, 20);
 }
 
-// win
+// WIN
 function checkWin() {
   if (saves >= 3 && gameActive) {
     gameActive = false;
