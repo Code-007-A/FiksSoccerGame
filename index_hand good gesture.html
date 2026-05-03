@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Scroll Money + Custom Hand</title>
+
+<style>
+body {
+    margin: 0;
+    height: 400vh;
+    background: radial-gradient(circle at center, #111, #000);
+    overflow-x: hidden;
+}
+
+/* HAND WRAPPER */
+.wrap {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    will-change: transform;
+}
+
+/* 🖼️ YOUR CUSTOM HAND IMAGE */
+#hand {
+    width: 160px;
+    height: 160px;
+    background-image: url("hand.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* CANVAS */
+canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+/* TEXT */
+.text {
+    position: fixed;
+    bottom: 40px;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-family: Arial;
+    opacity: 0.6;
+}
+
+/* 🇮🇹 BANNER */
+#banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 130px;
+
+    background: linear-gradient(
+        90deg,
+        #009246 0%,
+        #ffffff 35%,
+        #ffffff 65%,
+        #ce2b37 100%
+    );
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 28px;
+    font-family: Arial;
+    font-weight: bold;
+    color: #111;
+
+    transform: translateY(-140px);
+    transition: transform 0.7s ease;
+    z-index: 10;
+}
+
+#banner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.2);
+}
+
+#banner span {
+    position: relative;
+    z-index: 2;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="fx"></canvas>
+
+<div id="banner"><span>Happy Anniversary, Denny!</span></div>
+
+<div class="wrap">
+    <div id="hand"></div>
+</div>
+
+<div class="text">Scroll to generate money 💸 → bottom = surprise</div>
+
+<script>
+window.addEventListener("load", () => {
+
+const canvas = document.getElementById("fx");
+const ctx = canvas.getContext("2d");
+
+const hand = document.getElementById("hand");
+const banner = document.getElementById("banner");
+
+let target = 0;
+let current = 0;
+let lastBurst = 0;
+let triggered = false;
+
+const particles = [];
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+/* MONEY */
+function spawnMoney(x, y) {
+    for (let i = 0; i < 14; i++) {
+        particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 8,
+            vy: (Math.random() - 0.8) * 10,
+            life: 1,
+            type: "bill"
+        });
+    }
+}
+
+/* COINS */
+function spawnCoins(x, y) {
+    for (let i = 0; i < 45; i++) {
+        particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 12,
+            vy: (Math.random() - 1.2) * 14,
+            life: 1,
+            type: "coin",
+            rot: Math.random() * 360
+        });
+    }
+}
+
+/* SCROLL */
+window.addEventListener("scroll", () => {
+
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    target = window.pageYOffset / max;
+
+    const now = performance.now();
+
+    if (now - lastBurst > 90) {
+        spawnMoney(window.innerWidth / 2, window.innerHeight / 2);
+        lastBurst = now;
+    }
+
+    if (target >= 0.98 && !triggered) {
+        spawnCoins(window.innerWidth / 2, window.innerHeight / 2);
+        banner.style.transform = "translateY(0)";
+        triggered = true;
+    }
+
+    if (target < 0.9) {
+        triggered = false;
+        banner.style.transform = "translateY(-140px)";
+    }
+});
+
+/* ANIMATION */
+function animate() {
+    requestAnimationFrame(animate);
+
+    current += (target - current) * 0.08;
+
+    const squeeze = Math.pow(Math.abs(Math.sin(current * 6 * Math.PI)), 1.5);
+    const rub = Math.sin(current * 30);
+
+    /* apply motion to image */
+    hand.style.transform =
+        "translate(" + (rub * 6) + "px," + (squeeze * -4) + "px) " +
+        "rotate(" + (rub * 8) + "deg) " +
+        "scale(" + (1 - squeeze * 0.08) + ")";
+
+    /* particles */
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.3;
+        p.life -= 0.02;
+
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.translate(p.x, p.y);
+
+        if (p.type === "coin") {
+            ctx.rotate((p.rot += 5) * Math.PI / 180);
+            ctx.fillStyle = "#ffd700";
+            ctx.beginPath();
+            ctx.arc(0, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            ctx.fillStyle = "#00ff88";
+            ctx.fillRect(-10, -5, 20, 10);
+        }
+
+        ctx.restore();
+
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+animate();
+
+});
+</script>
+
+</body>
+</html>
