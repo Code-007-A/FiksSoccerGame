@@ -43,6 +43,7 @@
     text-align: center;
     font-size: 36px;
     color: white;
+    z-index: 10;
   }
 
   #counter {
@@ -53,16 +54,20 @@
     color: white;
   }
 
+  /* CONFETTI */
   .confetti {
     position: absolute;
     top: -20px;
     width: 8px;
     height: 12px;
+    opacity: 0.9;
     animation: fall linear forwards;
   }
 
   @keyframes fall {
-    to { transform: translateY(110vh) rotate(360deg); }
+    to {
+      transform: translateY(110vh) rotate(360deg);
+    }
   }
 </style>
 </head>
@@ -86,55 +91,55 @@ const counterText = document.getElementById("counter");
 
 let saves = 0;
 let gameActive = true;
-let goalieX = window.innerWidth / 2;
 let messageTimer = null;
 
-goalie.style.left = goalieX + "px";
-
-// scroll controls goalie
-window.addEventListener("wheel", (e) => {
-  const speed = 25;
-
-  goalieX += (e.deltaY > 0) ? -speed : speed;
+// mouse control
+document.addEventListener("mousemove", (e) => {
+  let x = e.clientX;
 
   const min = 80;
   const max = window.innerWidth - 80;
 
-  goalieX = Math.max(min, Math.min(max, goalieX));
+  x = Math.max(min, Math.min(max, x));
 
-  goalie.style.left = goalieX + "px";
+  goalie.style.left = x + "px";
 });
 
+// goal bounds
 function getGoal() {
   return document.querySelector(".goal").getBoundingClientRect();
 }
 
-// save message
+// SAVE MESSAGE (1 sec)
 function showSaveMessage() {
   message.textContent = "🧤 SAVED";
-  clearTimeout(messageTimer);
 
+  clearTimeout(messageTimer);
   messageTimer = setTimeout(() => {
-    message.textContent = "";
+    if (gameActive) message.textContent = "";
   }, 1000);
 }
 
-// confetti
+// CONFETTI SYSTEM (BLACK & WHITE)
 function spawnConfetti() {
   for (let i = 0; i < 80; i++) {
     const c = document.createElement("div");
     c.className = "confetti";
 
     c.style.left = Math.random() * window.innerWidth + "px";
+
+    // black & white only
     c.style.background = Math.random() > 0.5 ? "black" : "white";
+
     c.style.animationDuration = (2 + Math.random() * 3) + "s";
 
     document.body.appendChild(c);
+
     setTimeout(() => c.remove(), 5000);
   }
 }
 
-// BALL LOOP
+// BALL SHOOT
 function shootBall() {
   if (!gameActive) return;
 
@@ -145,8 +150,10 @@ function shootBall() {
 
   ball.style.opacity = "1";
 
-  const minX = goal.left + 10;
-  const maxX = goal.right - 10;
+  const padding = 10;
+  const minX = goal.left + padding;
+  const maxX = goal.right - padding;
+
   const targetX = minX + Math.random() * (maxX - minX);
 
   let speedY = 7;
@@ -157,36 +164,34 @@ function shootBall() {
     y -= speedY;
     x += speedX;
 
+    if (x < minX) x = minX;
+    if (x > maxX) x = maxX;
+
     ball.style.top = y + "px";
     ball.style.left = x + "px";
 
-    const ballRect = ball.getBoundingClientRect();
     const goalieRect = goalie.getBoundingClientRect();
-    const goal = getGoal();
+    const ballRect = ball.getBoundingClientRect();
 
-    // 🔥 FIRST WHITE GOAL LINE (CRITICAL RULE)
-    const goalLineY = goal.top + 40;
-
-    // ❗ ONCE PASSED LINE → NO SAVE ALLOWED EVER
-    const beforeGoalLine = ballRect.top > goalLineY;
-
-    // goalie collision
-    const touchingGoalie =
+    const save =
+      ballRect.top <= goalieRect.bottom &&
       ballRect.left < goalieRect.right &&
       ballRect.right > goalieRect.left;
 
-    // 🧤 ONLY VALID SAVE BEFORE LINE
-    if (touchingGoalie && beforeGoalLine) {
+    if (save) {
       clearInterval(interval);
 
       saves++;
+
       counterText.textContent = `Saves: ${saves}/3`;
 
       showSaveMessage();
 
       ball.style.top = (y + 80) + "px";
 
-      setTimeout(() => ball.style.opacity = "0", 200);
+      setTimeout(() => {
+        ball.style.opacity = "0";
+      }, 200);
 
       checkWin();
 
@@ -194,8 +199,7 @@ function shootBall() {
       return;
     }
 
-    // ball passed goal line → NO SAVE POSSIBLE
-    if (ballRect.top <= goal.top) {
+    if (goal && y <= goal.top) {
       clearInterval(interval);
       ball.style.opacity = "0";
       setTimeout(shootBall, 900);
@@ -204,17 +208,22 @@ function shootBall() {
   }, 20);
 }
 
-// WIN
+// WIN CONDITION
 function checkWin() {
   if (saves >= 3 && gameActive) {
     gameActive = false;
+
     counterText.textContent = "Saves: 3/3";
     message.textContent = "🎉 Happy Birthday, Fiks!";
+
     spawnConfetti();
   }
 }
 
-window.onload = shootBall;
+// start game
+window.onload = () => {
+  shootBall();
+};
 
 </script>
 
