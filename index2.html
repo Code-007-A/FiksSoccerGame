@@ -10,7 +10,6 @@
     background: #0b6623;
     overflow: hidden;
     font-family: Arial;
-    height: 200vh;
   }
 
   .goal {
@@ -113,13 +112,13 @@ function getGoal() {
   return document.querySelector(".goal").getBoundingClientRect();
 }
 
-// message
+// save message (1 sec)
 function showSaveMessage() {
   message.textContent = "🧤 SAVED";
 
   clearTimeout(messageTimer);
   messageTimer = setTimeout(() => {
-    if (gameActive) message.textContent = "";
+    message.textContent = "";
   }, 1000);
 }
 
@@ -163,29 +162,33 @@ function shootBall() {
     y -= speedY;
     x += speedX;
 
-    if (x < minX) x = minX;
-    if (x > maxX) x = maxX;
-
     ball.style.top = y + "px";
     ball.style.left = x + "px";
 
-    const goalieRect = goalie.getBoundingClientRect();
     const ballRect = ball.getBoundingClientRect();
-
+    const goalieRect = goalie.getBoundingClientRect();
     const goal = getGoal();
 
-    // 🔥 THIS IS THE KEY FIX
-    const saveLineY = goal.top + 40;
+    // 🔥 STRICT GOAL LINE (NO SAVE AFTER THIS)
+    const goalLineY = goal.top + 40;
 
-    const beforeLine = y > saveLineY; // ONLY ALLOW SAVE HERE
+    const beforeGoalLine = ballRect.top > goalLineY;
 
-    const touchingGoalie =
-      ballRect.top <= goalieRect.bottom &&
+    // ⭐ PIXEL-PERFECT SAVE CHECK (BOTTOM OF GOALIE)
+    const goalieBottomTouchesBall =
+      goalieRect.bottom >= ballRect.top &&
+      goalieRect.top < ballRect.bottom;
+
+    const insideWidth =
       ballRect.left < goalieRect.right &&
       ballRect.right > goalieRect.left;
 
-    // 🧤 ONLY VALID SAVE IF BEFORE LINE
-    if (touchingGoalie && beforeLine) {
+    const validSave =
+      beforeGoalLine &&
+      goalieBottomTouchesBall &&
+      insideWidth;
+
+    if (validSave) {
       clearInterval(interval);
 
       saves++;
@@ -205,8 +208,7 @@ function shootBall() {
       return;
     }
 
-    // once past goal line → NO SAVE POSSIBLE ANYMORE
-    if (y <= goal.top) {
+    if (ballRect.top <= goal.top) {
       clearInterval(interval);
       ball.style.opacity = "0";
       setTimeout(shootBall, 900);
