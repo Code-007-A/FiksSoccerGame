@@ -20,12 +20,13 @@
         background: linear-gradient(#0b6623, #0a5a1f);
     }
 
+    /* 25% wider goal (300 -> 375) */
     #goal {
         position: absolute;
         bottom: 0;
         left: 50%;
         transform: translateX(-50%);
-        width: 300px;
+        width: 375px;
         height: 100px;
         border: 4px solid white;
         border-bottom: none;
@@ -79,6 +80,7 @@
 
 <script>
 const field = document.getElementById("field");
+const goal = document.getElementById("goal");
 const goalie = document.getElementById("goalie");
 const ball = document.getElementById("ball");
 const message = document.getElementById("message");
@@ -104,7 +106,17 @@ function updateScore() {
 }
 updateScore();
 
-// move goalie
+// goal bounds (centered 375px)
+function getGoalBounds() {
+    const center = field.clientWidth / 2;
+    const width = 375;
+    return {
+        left: center - width / 2,
+        right: center + width / 2
+    };
+}
+
+// wheel control
 document.addEventListener("wheel", (e) => {
     if (gameOver) return;
 
@@ -122,42 +134,49 @@ window.addEventListener("resize", () => {
 });
 
 function spawnBall() {
-    ballX = Math.random() * (fieldWidth - 30);
+    const bounds = getGoalBounds();
+
+    ballX = bounds.left + Math.random() * (bounds.right - bounds.left - 25);
     ballY = 0;
 
-    dx = (Math.random() - 0.5) * 4;
+    dx = (Math.random() - 0.5) * 3;
     dy = 3 + Math.random() * 2;
 
     ball.style.left = ballX + "px";
     ball.style.top = ballY + "px";
 }
 
-function checkCollision(ballRect, goalieRect) {
-    return (
-        ballRect.bottom >= goalieRect.top &&
-        ballRect.left < goalieRect.right &&
-        ballRect.right > goalieRect.left
-    );
-}
-
 function update() {
     if (gameOver) return;
 
     const goalieRect = goalie.getBoundingClientRect();
+    const ballRect = ball.getBoundingClientRect();
+    const bounds = getGoalBounds();
 
     ballX += dx;
     ballY += dy;
 
-    dx += (Math.random() - 0.5) * 0.15;
-    dx = Math.max(-4, Math.min(4, dx));
+    // keep ball inside goal width (force direction adjustment)
+    if (ballX < bounds.left) {
+        ballX = bounds.left;
+        dx *= -1;
+    }
+    if (ballX > bounds.right - 25) {
+        ballX = bounds.right - 25;
+        dx *= -1;
+    }
+
+    dx += (Math.random() - 0.5) * 0.1;
+    dx = Math.max(-3, Math.min(3, dx));
 
     ball.style.left = ballX + "px";
     ball.style.top = ballY + "px";
 
-    const ballRect = ball.getBoundingClientRect();
-
-    // SAVE
-    if (checkCollision(ballRect, goalieRect)) {
+    if (
+        ballRect.bottom >= goalieRect.top &&
+        ballRect.left < goalieRect.right &&
+        ballRect.right > goalieRect.left
+    ) {
         saves++;
         updateScore();
 
@@ -176,7 +195,6 @@ function update() {
         }, 600);
     }
 
-    // MISS
     if (ballY > window.innerHeight) {
         message.textContent = "Missed! ⚽";
         message.style.display = "block";
