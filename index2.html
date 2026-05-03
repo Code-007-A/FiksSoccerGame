@@ -62,9 +62,7 @@
   }
 
   @keyframes fall {
-    to {
-      transform: translateY(110vh) rotate(360deg);
-    }
+    to { transform: translateY(110vh) rotate(360deg); }
   }
 </style>
 </head>
@@ -107,37 +105,34 @@ window.addEventListener("wheel", (e) => {
   goalie.style.left = goalieX + "px";
 });
 
-// goal bounds
 function getGoal() {
   return document.querySelector(".goal").getBoundingClientRect();
 }
 
-// save message (1 sec)
+// SAVE MESSAGE
 function showSaveMessage() {
   message.textContent = "🧤 SAVED";
-
   clearTimeout(messageTimer);
+
   messageTimer = setTimeout(() => {
     message.textContent = "";
   }, 1000);
 }
 
-// confetti
+// CONFETTI
 function spawnConfetti() {
   for (let i = 0; i < 80; i++) {
     const c = document.createElement("div");
     c.className = "confetti";
-
     c.style.left = Math.random() * window.innerWidth + "px";
     c.style.background = Math.random() > 0.5 ? "black" : "white";
     c.style.animationDuration = (2 + Math.random() * 3) + "s";
-
     document.body.appendChild(c);
     setTimeout(() => c.remove(), 5000);
   }
 }
 
-// BALL SHOOT
+// BALL LOOP
 function shootBall() {
   if (!gameActive) return;
 
@@ -148,10 +143,8 @@ function shootBall() {
 
   ball.style.opacity = "1";
 
-  const padding = 10;
-  const minX = goal.left + padding;
-  const maxX = goal.right - padding;
-
+  const minX = goal.left + 10;
+  const maxX = goal.right - 10;
   const targetX = minX + Math.random() * (maxX - minX);
 
   let speedY = 7;
@@ -167,26 +160,19 @@ function shootBall() {
 
     const ballRect = ball.getBoundingClientRect();
     const goalieRect = goalie.getBoundingClientRect();
-    const goal = getGoal();
 
-    // 🔥 STRICT GOAL LINE (NO SAVE AFTER THIS)
     const goalLineY = goal.top + 40;
 
-    const beforeGoalLine = ballRect.top > goalLineY;
+    // ❗ CRITICAL FIX: once ball passes goalie feet → NO SAVE EVER
+    const beforeGoalieFeet = ballRect.bottom < goalieRect.bottom;
 
-    // ⭐ PIXEL-PERFECT SAVE CHECK (BOTTOM OF GOALIE)
-    const goalieBottomTouchesBall =
-      goalieRect.bottom >= ballRect.top &&
-      goalieRect.top < ballRect.bottom;
-
-    const insideWidth =
+    const horizontalTouch =
       ballRect.left < goalieRect.right &&
       ballRect.right > goalieRect.left;
 
     const validSave =
-      beforeGoalLine &&
-      goalieBottomTouchesBall &&
-      insideWidth;
+      beforeGoalieFeet &&
+      horizontalTouch;
 
     if (validSave) {
       clearInterval(interval);
@@ -198,9 +184,7 @@ function shootBall() {
 
       ball.style.top = (y + 80) + "px";
 
-      setTimeout(() => {
-        ball.style.opacity = "0";
-      }, 200);
+      setTimeout(() => ball.style.opacity = "0", 200);
 
       checkWin();
 
@@ -208,6 +192,7 @@ function shootBall() {
       return;
     }
 
+    // goal reached = miss
     if (ballRect.top <= goal.top) {
       clearInterval(interval);
       ball.style.opacity = "0";
@@ -221,18 +206,13 @@ function shootBall() {
 function checkWin() {
   if (saves >= 3 && gameActive) {
     gameActive = false;
-
     counterText.textContent = "Saves: 3/3";
     message.textContent = "🎉 Happy Birthday, Fiks!";
-
     spawnConfetti();
   }
 }
 
-// start
-window.onload = () => {
-  shootBall();
-};
+window.onload = shootBall;
 
 </script>
 
