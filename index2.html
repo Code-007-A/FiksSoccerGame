@@ -20,7 +20,6 @@
         background: linear-gradient(#0b6623, #0a5a1f);
     }
 
-    /* GOAL WITH NET EFFECT */
     #goal {
         position: absolute;
         bottom: 0;
@@ -36,7 +35,6 @@
         background-size: 10px 10px;
     }
 
-    /* GOALIE PLAYER */
     #goalie {
         position: absolute;
         bottom: 120px;
@@ -167,7 +165,9 @@ window.addEventListener("resize", () => {
 function spawnBall() {
     const bounds = getGoalBounds();
 
-    ballX = bounds.left + Math.random() * (bounds.right - bounds.left - 25);
+    const margin = 30; // keeps ball safely inside posts
+
+    ballX = bounds.left + margin + Math.random() * (bounds.right - bounds.left - margin * 2 - 25);
     ballY = 0;
 
     dx = (Math.random() - 0.5) * 3;
@@ -190,11 +190,8 @@ function resolveSave() {
     message.textContent = "Great Save! 🧤";
     message.style.display = "block";
 
-    // hide message after 1 second (only if not win)
     setTimeout(() => {
-        if (!gameOver) {
-            message.style.display = "none";
-        }
+        if (!gameOver) message.style.display = "none";
     }, 1000);
 
     dy = -(3 + Math.random() * 2);
@@ -224,12 +221,20 @@ function update() {
 
     const goalieRect = goalie.getBoundingClientRect();
     const ballRect = ball.getBoundingClientRect();
+    const bounds = getGoalBounds();
 
     ballX += dx;
     ballY += dy;
 
-    dx += (Math.random() - 0.5) * 0.1;
-    dx = Math.max(-3, Math.min(3, dx));
+    // STRICT WALLS: always stay inside goal
+    if (ballX <= bounds.left) {
+        ballX = bounds.left;
+        dx = Math.abs(dx); // force right
+    }
+    if (ballX >= bounds.right - 25) {
+        ballX = bounds.right - 25;
+        dx = -Math.abs(dx); // force left
+    }
 
     ball.style.left = ballX + "px";
     ball.style.top = ballY + "px";
