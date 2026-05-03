@@ -9,26 +9,26 @@
     margin: 0;
     background: #0b6623;
     overflow: hidden;
+    font-family: Arial;
   }
 
-  /* GOAL (50% wider) */
+  /* GOAL (WIDER) */
   .goal {
     position: absolute;
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 480px;   /* was 320px → +50% wider */
-    height: 140px;
+    width: 700px;   /* widened goal */
+    height: 160px;
     border: 4px solid white;
   }
 
   #goalie {
     position: absolute;
-    top: 60px;
+    top: 70px;
     left: 50%;
     transform: translateX(-50%);
     width: 120px;
-    transition: left 0.08s linear;
   }
 
   #ball {
@@ -42,9 +42,16 @@
     top: 200px;
     width: 100%;
     text-align: center;
-    font-size: 28px;
+    font-size: 32px;
     color: white;
-    font-family: Arial;
+  }
+
+  #counter {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 22px;
+    color: white;
   }
 </style>
 </head>
@@ -54,15 +61,20 @@
 <div class="goal"></div>
 
 <img id="goalie" src="goalie.png" alt="Goalie">
-<img id="ball" src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg" alt="Ball">
+<img id="ball" src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg">
 
 <div id="message"></div>
+<div id="counter">Saves: 0</div>
 
 <script>
 
 const goalie = document.getElementById("goalie");
 const ball = document.getElementById("ball");
 const message = document.getElementById("message");
+const counterText = document.getElementById("counter");
+
+let saves = 0;
+let gameActive = true;
 
 // mouse control
 document.addEventListener("mousemove", (e) => {
@@ -77,34 +89,28 @@ document.addEventListener("mousemove", (e) => {
   goalie.style.left = x + "px";
 });
 
-// get goal boundaries
-function getGoalBounds() {
-  const goal = document.querySelector(".goal").getBoundingClientRect();
-  return {
-    left: goal.left,
-    right: goal.right,
-    top: goal.top
-  };
+// get goal bounds
+function getGoal() {
+  return document.querySelector(".goal").getBoundingClientRect();
 }
 
-// SHOOT BALL WITH RANDOM ANGLE BUT STILL INSIDE GOAL
+// BALL SHOOT
 function shootBall() {
-  const goal = getGoalBounds();
+  if (!gameActive) return;
+
+  const goal = getGoal();
 
   let x = window.innerWidth / 2;
-  let y = window.innerHeight - 50;
+  let y = window.innerHeight - 60;
 
   ball.style.left = x + "px";
   ball.style.top = y + "px";
+  ball.style.opacity = "1";
 
-  // pick random target INSIDE goal width
   const targetX = goal.left + Math.random() * (goal.right - goal.left);
 
-  // add slight randomness in curve
-  const drift = (Math.random() - 0.5) * 3;
-
-  let speedY = 8;
-  let speedX = (targetX - x) / 60 + drift;
+  let speedY = 7;
+  let speedX = (targetX - x) / 60;
 
   const interval = setInterval(() => {
 
@@ -117,39 +123,51 @@ function shootBall() {
     const goalieRect = goalie.getBoundingClientRect();
     const ballRect = ball.getBoundingClientRect();
 
-    // SAVE CHECK
-    const hit =
+    // SAVE DETECTED
+    const save =
       ballRect.top <= goalieRect.bottom &&
       ballRect.left < goalieRect.right &&
       ballRect.right > goalieRect.left;
 
-    if (hit) {
+    if (save) {
       clearInterval(interval);
+
+      saves++;
+      counterText.textContent = "Saves: " + saves;
+
       message.textContent = "🧤 SAVE!";
-      resetBall();
-      setTimeout(shootBall, 1000);
+
+      // reflect ball back (quick animation upward then disappear)
+      ball.style.top = (y + 80) + "px";
+      setTimeout(() => {
+        ball.style.opacity = "0";
+      }, 200);
+
+      checkWin();
+
+      setTimeout(shootBall, 900);
+      return;
     }
 
-    // GOAL CHECK (inside posts)
+    // GOAL / MISS CHECK
     if (y <= goal.top) {
-      if (x > goal.left && x < goal.right) {
-        clearInterval(interval);
-        message.textContent = "⚽ GOAL!";
-      } else {
-        clearInterval(interval);
-        message.textContent = "❌ MISS!";
-      }
+      clearInterval(interval);
 
-      resetBall();
-      setTimeout(shootBall, 1000);
+      message.textContent = "⚽ GOAL!";
+      ball.style.opacity = "0";
+
+      setTimeout(shootBall, 900);
     }
 
   }, 20);
 }
 
-function resetBall() {
-  ball.style.top = "";
-  message.textContent = "";
+// WIN CONDITION
+function checkWin() {
+  if (saves >= 3) {
+    gameActive = false;
+    message.textContent = "🎉 Happy Birthday, Fiks!";
+  }
 }
 
 // start game
