@@ -20,7 +20,6 @@
         background: linear-gradient(#0b6623, #0a5a1f);
     }
 
-    /* GOAL: 80% wider (375 -> 675) */
     #goal {
         position: absolute;
         bottom: 0;
@@ -98,7 +97,7 @@ let dy = 0;
 
 let saves = 0;
 let gameOver = false;
-let shotResolved = false;
+let state = "shoot"; // shoot | saved | missed
 
 function updateScore() {
     scoreDisplay.textContent = saves + " / 3 Saves";
@@ -107,7 +106,6 @@ updateScore();
 
 goalie.style.left = goalieX + "px";
 
-// GOAL BOUNDS (NOW 675px wide)
 function getGoalBounds() {
     const center = field.clientWidth / 2;
     const width = 675;
@@ -117,7 +115,7 @@ function getGoalBounds() {
     };
 }
 
-// control
+// goalie control
 document.addEventListener("wheel", (e) => {
     if (gameOver) return;
 
@@ -137,48 +135,50 @@ window.addEventListener("resize", () => {
 function spawnBall() {
     const bounds = getGoalBounds();
 
-    // ALWAYS spawn inside goal
     ballX = bounds.left + Math.random() * (bounds.right - bounds.left - 25);
     ballY = 0;
 
     dx = (Math.random() - 0.5) * 3;
     dy = 3 + Math.random() * 2;
 
-    shotResolved = false;
+    state = "shoot";
 
     ball.style.left = ballX + "px";
     ball.style.top = ballY + "px";
 }
 
-function resolveShot(type) {
-    if (shotResolved || gameOver) return;
+function resolveSave() {
+    if (state !== "shoot" || gameOver) return;
 
-    shotResolved = true;
+    state = "saved";
 
-    if (type === "save") {
-        saves++;
-        updateScore();
+    saves++;
+    updateScore();
 
-        message.textContent = "Great Save! 🧤";
-        message.style.display = "block";
+    message.textContent = "Great Save! 🧤";
+    message.style.display = "block";
 
-        // reflect ball upward
-        dy = -(3 + Math.random() * 2);
-        dx = (Math.random() - 0.5) * 3;
+    // REFLECT BALL BACK UP
+    dy = -(3 + Math.random() * 2);
+    dx = (Math.random() - 0.5) * 3;
 
-        if (saves === 3) {
-            gameOver = true;
-            message.textContent = "You Win! 🏆";
-        }
-
-    } else {
-        message.textContent = "Missed! ⚽";
-        message.style.display = "block";
-
-        setTimeout(() => {
-            if (!gameOver) spawnBall();
-        }, 600);
+    if (saves === 3) {
+        gameOver = true;
+        message.textContent = "You Win! 🏆";
     }
+}
+
+function resolveMiss() {
+    if (state !== "shoot" || gameOver) return;
+
+    state = "missed";
+
+    message.textContent = "Missed! ⚽";
+    message.style.display = "block";
+
+    setTimeout(() => {
+        if (!gameOver) spawnBall();
+    }, 500);
 }
 
 function update() {
@@ -186,20 +186,9 @@ function update() {
 
     const goalieRect = goalie.getBoundingClientRect();
     const ballRect = ball.getBoundingClientRect();
-    const bounds = getGoalBounds();
 
     ballX += dx;
     ballY += dy;
-
-    // FORCE BALL ALWAYS INSIDE GOAL WIDTH
-    if (ballX < bounds.left) {
-        ballX = bounds.left;
-        dx *= -1;
-    }
-    if (ballX > bounds.right - 25) {
-        ballX = bounds.right - 25;
-        dx *= -1;
-    }
 
     dx += (Math.random() - 0.5) * 0.1;
     dx = Math.max(-3, Math.min(3, dx));
@@ -207,22 +196,22 @@ function update() {
     ball.style.left = ballX + "px";
     ball.style.top = ballY + "px";
 
-    // SAVE
-    if (!shotResolved &&
+    // SAVE CHECK
+    if (state === "shoot" &&
         ballRect.bottom >= goalieRect.top &&
         ballRect.left < goalieRect.right &&
         ballRect.right > goalieRect.left
     ) {
-        resolveShot("save");
+        resolveSave();
     }
 
-    // MISS
-    if (!shotResolved && ballY > window.innerHeight) {
-        resolveShot("miss");
+    // MISS CHECK
+    if (state === "shoot" && ballY > window.innerHeight) {
+        resolveMiss();
     }
 
-    // after reflect, spawn new ball
-    if (shotResolved && ballY < -40) {
+    // AFTER SAVE: wait until ball exits top THEN spawn next
+    if (state === "saved" && ballY < -50) {
         spawnBall();
     }
 
