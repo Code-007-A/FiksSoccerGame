@@ -1,239 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Soccer Goalie Block Game</title>
+<meta charset="UTF-8">
+<title>Soccer Game</title>
+
 <style>
-    body {
-        margin: 0;
-        overflow: hidden;
-        background: #0b6623;
-        font-family: Arial, sans-serif;
-    }
+  body {
+    margin: 0;
+    background: #0b6623; /* field green */
+    overflow: hidden;
+  }
 
-    #field {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-        background: linear-gradient(#0b6623, #0a5a1f);
-    }
+  /* Goal area */
+  .goal {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 120px;
+    border: 4px solid white;
+  }
 
-    /* GOAL WITH NET EFFECT */
-    #goal {
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 675px;
-        height: 120px;
-        border: 4px solid white;
-        border-bottom: none;
-        background-image:
-            repeating-linear-gradient(0deg, rgba(255,255,255,0.15) 0px, rgba(255,255,255,0.15) 1px, transparent 1px, transparent 10px),
-            repeating-linear-gradient(90deg, rgba(255,255,255,0.15) 0px, rgba(255,255,255,0.15) 1px, transparent 1px, transparent 10px);
-        background-size: 10px 10px;
-    }
-
-    /* GOALIE (PNG REPLACEMENT) */
-    #goalie {
-        position: absolute;
-        bottom: 120px;
-        width: 80px;
-        height: 80px;
-        left: 0;
-        /*background: url('goalie.png') no-repeat center center;*/
-        <img src="goalie.png">
-        background-size: contain;
-    }
-
-    #ball {
-        position: absolute;
-        width: 25px;
-        height: 25px;
-        background: white;
-        border-radius: 50%;
-    }
-
-    #message {
-        position: absolute;
-        top: 40%;
-        width: 100%;
-        text-align: center;
-        font-size: 40px;
-        color: white;
-        display: none;
-    }
-
-    #score {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        color: white;
-        font-size: 20px;
-    }
+  /* Goalie image */
+  #goalie {
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    transition: left 0.1s linear;
+  }
 </style>
 </head>
+
 <body>
 
-<div id="field">
-    <div id="goal"></div>
-    <div id="goalie"></div>
-    <div id="ball"></div>
-    <div id="message">You Win! 🏆</div>
-    <div id="score"></div>
-</div>
+<!-- Goal frame -->
+<div class="goal"></div>
+
+<!-- Goalie -->
+<img id="goalie" src="goalie.png" alt="Goalie">
 
 <script>
-const field = document.getElementById("field");
-const goal = document.getElementById("goal");
-const goalie = document.getElementById("goalie");
-const ball = document.getElementById("ball");
-const message = document.getElementById("message");
-const scoreDisplay = document.getElementById("score");
+  // Simple movement: follow mouse left/right
+  const goalie = document.getElementById("goalie");
 
-let fieldWidth = field.clientWidth;
-const goalieWidth = 80;
-let goalieX = fieldWidth / 2;
+  document.addEventListener("mousemove", (e) => {
+    let x = e.clientX;
 
-let ballX = 0;
-let ballY = 0;
-let dx = 0;
-let dy = 0;
+    // keep within screen bounds
+    const min = 60;
+    const max = window.innerWidth - 60;
 
-let saves = 0;
-let gameOver = false;
-let state = "shoot";
+    if (x < min) x = min;
+    if (x > max) x = max;
 
-function updateScore() {
-    scoreDisplay.textContent = saves + " / 3 Saves";
-}
-updateScore();
-
-function getGoalBounds() {
-    const center = field.clientWidth / 2;
-    const width = 675;
-    return {
-        left: center - width / 2,
-        right: center + width / 2
-    };
-}
-
-// control
-document.addEventListener("wheel", (e) => {
-    if (gameOver) return;
-
-    e.preventDefault();
-
-    if (e.deltaY > 0) goalieX -= 30;
-    else goalieX += 30;
-
-    goalieX = Math.max(0, Math.min(fieldWidth - goalieWidth, goalieX));
-    goalie.style.left = goalieX + "px";
-}, { passive: false });
-
-window.addEventListener("resize", () => {
-    fieldWidth = field.clientWidth;
-});
-
-function spawnBall() {
-    const bounds = getGoalBounds();
-
-    const margin = 30;
-
-    ballX = bounds.left + margin + Math.random() * (bounds.right - bounds.left - margin * 2 - 25);
-    ballY = 0;
-
-    dx = (Math.random() - 0.5) * 3;
-    dy = 3 + Math.random() * 2;
-
-    state = "shoot";
-
-    ball.style.left = ballX + "px";
-    ball.style.top = ballY + "px";
-}
-
-function resolveSave() {
-    if (state !== "shoot" || gameOver) return;
-
-    state = "saved";
-
-    saves++;
-    updateScore();
-
-    message.textContent = "Great Save! 🧤";
-    message.style.display = "block";
-
-    setTimeout(() => {
-        if (!gameOver) message.style.display = "none";
-    }, 1000);
-
-    dy = -(3 + Math.random() * 2);
-    dx = (Math.random() - 0.5) * 3;
-
-    if (saves === 3) {
-        gameOver = true;
-        message.textContent = "You Win! 🏆";
-    }
-}
-
-function resolveMiss() {
-    if (state !== "shoot" || gameOver) return;
-
-    state = "missed";
-
-    message.textContent = "Missed! ⚽";
-    message.style.display = "block";
-
-    setTimeout(() => {
-        if (!gameOver) spawnBall();
-    }, 500);
-}
-
-function update() {
-    if (gameOver) return;
-
-    const goalieRect = goalie.getBoundingClientRect();
-    const ballRect = ball.getBoundingClientRect();
-    const bounds = getGoalBounds();
-
-    ballX += dx;
-    ballY += dy;
-
-    if (ballX <= bounds.left) {
-        ballX = bounds.left;
-        dx = Math.abs(dx);
-    }
-    if (ballX >= bounds.right - 25) {
-        ballX = bounds.right - 25;
-        dx = -Math.abs(dx);
-    }
-
-    ball.style.left = ballX + "px";
-    ball.style.top = ballY + "px";
-
-    if (state === "shoot" &&
-        ballRect.bottom >= goalieRect.top &&
-        ballRect.left < goalieRect.right &&
-        ballRect.right > goalieRect.left
-    ) {
-        resolveSave();
-    }
-
-    if (state === "shoot" && ballY > window.innerHeight) {
-        resolveMiss();
-    }
-
-    if (state === "saved" && ballY < -50) {
-        spawnBall();
-    }
-
-    requestAnimationFrame(update);
-}
-
-spawnBall();
-update();
+    goalie.style.left = x + "px";
+  });
 </script>
 
 </body>
