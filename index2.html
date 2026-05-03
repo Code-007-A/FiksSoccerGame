@@ -40,10 +40,8 @@
         border-radius: 10px;
     }
 
-    #ball {
+    .ball {
         position: absolute;
-        top: 50px;
-        left: 50%;
         width: 25px;
         height: 25px;
         background: white;
@@ -66,14 +64,12 @@
 <div id="field">
     <div id="goal"></div>
     <div id="goalie"></div>
-    <div id="ball"></div>
     <div id="message">Congratulations! You Won 🎉</div>
 </div>
 
 <script>
 const field = document.getElementById("field");
 const goalie = document.getElementById("goalie");
-const ball = document.getElementById("ball");
 const message = document.getElementById("message");
 
 let gameOver = false;
@@ -82,63 +78,89 @@ let fieldWidth = field.clientWidth;
 const goalieWidth = 80;
 let goalieX = fieldWidth / 2 - goalieWidth / 2;
 
-let ballY = 50;
-
-// initial positions
 goalie.style.left = goalieX + "px";
-ball.style.left = fieldWidth / 2 + "px";
 
-// responsive resize
 window.addEventListener("resize", () => {
     fieldWidth = field.clientWidth;
     goalieX = Math.max(0, Math.min(fieldWidth - goalieWidth, goalieX));
     goalie.style.left = goalieX + "px";
 });
 
-// WHEEL CONTROLS (NEW)
+// mouse wheel control (kept)
 document.addEventListener("wheel", (e) => {
     if (gameOver) return;
 
-    e.preventDefault(); // stop page scroll
+    e.preventDefault();
 
-    // scroll down = left, scroll up = right
-    if (e.deltaY > 0) {
-        goalieX -= 30;
-    } else {
-        goalieX += 30;
-    }
+    if (e.deltaY > 0) goalieX -= 30;
+    else goalieX += 30;
 
     goalieX = Math.max(0, Math.min(fieldWidth - goalieWidth, goalieX));
     goalie.style.left = goalieX + "px";
 }, { passive: false });
 
-// ball movement
-function updateBall() {
+// BALL SYSTEM
+let balls = [];
+
+function spawnBall() {
     if (gameOver) return;
 
-    ballY += 4;
-    ball.style.top = ballY + "px";
+    const ball = document.createElement("div");
+    ball.classList.add("ball");
+    field.appendChild(ball);
 
-    const goalieRect = goalie.getBoundingClientRect();
-    const ballRect = ball.getBoundingClientRect();
+    const startX = Math.random() * (fieldWidth - 30);
 
-    if (
-        ballRect.bottom >= goalieRect.top &&
-        ballRect.left < goalieRect.right &&
-        ballRect.right > goalieRect.left
-    ) {
-        gameOver = true;
-        message.style.display = "block";
-    }
-
-    if (ballY > window.innerHeight) {
-        ballY = 50;
-    }
-
-    requestAnimationFrame(updateBall);
+    balls.push({
+        el: ball,
+        x: startX,
+        y: 0,
+        dx: (Math.random() - 0.5) * 3,
+        dy: 3 + Math.random() * 2
+    });
 }
 
-updateBall();
+setInterval(spawnBall, 500);
+
+function update() {
+    if (gameOver) return;
+
+    const goalieRect = goalie.getBoundingClientRect();
+
+    balls.forEach((b, index) => {
+        b.x += b.dx;
+        b.y += b.dy;
+
+        // slight curve change
+        b.dx += (Math.random() - 0.5) * 0.2;
+        b.dx = Math.max(-4, Math.min(4, b.dx));
+
+        b.el.style.left = b.x + "px";
+        b.el.style.top = b.y + "px";
+
+        const ballRect = b.el.getBoundingClientRect();
+
+        // collision with goalie
+        if (
+            ballRect.bottom >= goalieRect.top &&
+            ballRect.left < goalieRect.right &&
+            ballRect.right > goalieRect.left
+        ) {
+            gameOver = true;
+            message.style.display = "block";
+        }
+
+        // remove if off screen
+        if (b.y > window.innerHeight) {
+            b.el.remove();
+            balls.splice(index, 1);
+        }
+    });
+
+    requestAnimationFrame(update);
+}
+
+update();
 </script>
 
 </body>
