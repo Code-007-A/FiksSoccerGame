@@ -10,7 +10,7 @@
     background: #0b6623;
     overflow: hidden;
     font-family: Arial;
-    height: 200vh; /* important: enables scrolling */
+    height: 200vh;
   }
 
   .goal {
@@ -44,7 +44,6 @@
     text-align: center;
     font-size: 36px;
     color: white;
-    z-index: 10;
   }
 
   #counter {
@@ -93,18 +92,13 @@ let gameActive = true;
 let goalieX = window.innerWidth / 2;
 let messageTimer = null;
 
-// INITIAL POSITION
 goalie.style.left = goalieX + "px";
 
-// 🔥 SCROLL CONTROLS GOALIE
+// scroll control
 window.addEventListener("wheel", (e) => {
   const speed = 25;
 
-  if (e.deltaY > 0) {
-    goalieX -= speed; // scroll down → left
-  } else {
-    goalieX += speed; // scroll up → right
-  }
+  goalieX += (e.deltaY > 0) ? -speed : speed;
 
   const min = 80;
   const max = window.innerWidth - 80;
@@ -144,7 +138,7 @@ function spawnConfetti() {
   }
 }
 
-// ball logic
+// BALL SHOOT
 function shootBall() {
   if (!gameActive) return;
 
@@ -178,12 +172,18 @@ function shootBall() {
     const goalieRect = goalie.getBoundingClientRect();
     const ballRect = ball.getBoundingClientRect();
 
-    const save =
+    // 🔥 SAVE LINE (CRITICAL RULE)
+    const saveLineY = goal.top + 40;
+
+    const validSaveZone = y > saveLineY; // must save BEFORE line
+
+    const touchedGoalie =
       ballRect.top <= goalieRect.bottom &&
       ballRect.left < goalieRect.right &&
       ballRect.right > goalieRect.left;
 
-    if (save) {
+    // ONLY VALID SAVE IF BEFORE LINE
+    if (touchedGoalie && validSaveZone) {
       clearInterval(interval);
 
       saves++;
@@ -203,7 +203,8 @@ function shootBall() {
       return;
     }
 
-    if (goal && y <= goal.top) {
+    // GOAL LINE PASSED → NO SAVE ALLOWED
+    if (y <= goal.top) {
       clearInterval(interval);
       ball.style.opacity = "0";
       setTimeout(shootBall, 900);
