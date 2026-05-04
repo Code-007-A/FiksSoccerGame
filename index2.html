@@ -5,7 +5,6 @@
 <title>Soccer Save Game</title>
 
 <style>
-/* 🚫 FULL SCROLL LOCK */
 html, body {
   margin: 0;
   padding: 0;
@@ -15,14 +14,9 @@ html, body {
   position: fixed;
   touch-action: none;
   font-family: Arial;
-}
-
-/* GAME BACKGROUND */
-body {
   background: #0b6623;
 }
 
-/* GOAL */
 .goal {
   position: absolute;
   top: 20px;
@@ -32,14 +26,12 @@ body {
   height: 160px;
   border: 4px solid white;
 
-  /* net effect */
   background-image:
     linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
-/* GOALIE */
 #goalie {
   position: absolute;
   top: 70px;
@@ -47,14 +39,12 @@ body {
   transform: translateX(-50%);
 }
 
-/* BALL */
 #ball {
   position: absolute;
   width: 35px;
   height: 35px;
 }
 
-/* UI */
 #message {
   position: absolute;
   top: 200px;
@@ -83,7 +73,6 @@ body {
   cursor: pointer;
 }
 
-/* CONFETTI */
 .confetti {
   position: absolute;
   top: -20px;
@@ -127,25 +116,20 @@ function getGoalBounds() {
   return goal.getBoundingClientRect();
 }
 
-// 🧤 GOALIE MOVE (LOCKED)
-function moveGoalie(x) {
+// 🧤 GOALIE MOUSE CONTROL (LEFT / RIGHT ONLY)
+window.addEventListener("mousemove", (e) => {
+  if (!gameActive) return;
+
   const bounds = getGoalBounds();
   const goalieWidth = goalie.offsetWidth;
 
   const minX = bounds.left + goalieWidth / 2;
   const maxX = bounds.right - goalieWidth / 2;
 
+  let x = e.clientX;
+
   goalieX = Math.max(minX, Math.min(maxX, x));
   goalie.style.left = goalieX + "px";
-}
-
-// 🎮 SCROLL CONTROL (only if game active)
-window.addEventListener("wheel", (e) => {
-  if (!gameActive) return;
-
-  const speed = 25;
-  goalieX += (e.deltaY > 0) ? -speed : speed;
-  moveGoalie(goalieX);
 });
 
 // 🎉 CONFETTI
@@ -273,7 +257,7 @@ function shootBall() {
   }, 20);
 }
 
-// 🔄 RESTART
+// 🔄 RESTART GAME
 restartBtn.addEventListener("click", () => {
   saves = 0;
   gameActive = true;
@@ -284,22 +268,24 @@ restartBtn.addEventListener("click", () => {
 
   const bounds = getGoalBounds();
   goalieX = (bounds.left + bounds.right) / 2;
-  moveGoalie(goalieX);
 
   resetBall();
 
-  setTimeout(() => shootBall(), 500);
+  setTimeout(() => {
+    shootBall();
+  }, 500);
 });
 
 // 🧠 INIT
 window.onload = () => {
   const bounds = getGoalBounds();
   goalieX = (bounds.left + bounds.right) / 2;
-  moveGoalie(goalieX);
 
   resetBall();
 
-  setTimeout(() => shootBall(), 500);
+  setTimeout(() => {
+    shootBall();
+  }, 500);
 };
 
 </script>
