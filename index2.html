@@ -17,7 +17,7 @@ body {
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  width: 1200px;
+  width: 900px; /* adjust goal width here */
   height: 160px;
   border: 4px solid white;
 }
@@ -25,14 +25,14 @@ body {
 #goalie {
   position: absolute;
   top: 70px;
-  width: 90px; /* 40% wider */
+  width: 168px; /* 40% wider */
   transform: translateX(-50%);
 }
 
 #ball {
   position: absolute;
-  width: 20px;
-  height: 20px;
+  width: 35px;
+  height: 35px;
 }
 
 #message {
@@ -50,6 +50,18 @@ body {
   left: 10px;
   font-size: 22px;
   color: white;
+}
+
+.confetti {
+  position: absolute;
+  top: -20px;
+  width: 8px;
+  height: 12px;
+  animation: fall linear forwards;
+}
+
+@keyframes fall {
+  to { transform: translateY(110vh) rotate(360deg); }
 }
 </style>
 </head>
@@ -73,15 +85,15 @@ const counterText = document.getElementById("counter");
 const message = document.getElementById("message");
 
 let saves = 0;
-let goalieX = window.innerWidth / 2;
 let gameActive = true;
+let goalieX = window.innerWidth / 2;
 
-// 🧠 GOAL BOUNDS
+// 🧠 GET GOAL BOUNDS
 function getGoalBounds() {
   return goal.getBoundingClientRect();
 }
 
-// 🧤 MOVE GOALIE (LOCKED INSIDE POSTS)
+// 🧤 GOALIE MOVEMENT (LOCKED INSIDE POSTS)
 function moveGoalie(x) {
   const bounds = getGoalBounds();
   const goalieWidth = goalie.offsetWidth;
@@ -100,13 +112,25 @@ window.addEventListener("wheel", (e) => {
   moveGoalie(goalieX);
 });
 
-// ⚽ SHOOT BALL (CURVED RANDOM SHOTS)
+// 🎉 CONFETTI
+function spawnConfetti() {
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement("div");
+    c.className = "confetti";
+    c.style.left = Math.random() * window.innerWidth + "px";
+    c.style.background = Math.random() > 0.5 ? "black" : "white";
+    c.style.animationDuration = (2 + Math.random() * 3) + "s";
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 5000);
+  }
+}
+
+// ⚽ SHOOT BALL
 function shootBall() {
   if (!gameActive) return;
 
   const goalRect = getGoalBounds();
 
-  // random start (left / center / right)
   const startZones = [
     window.innerWidth * 0.2,
     window.innerWidth * 0.5,
@@ -118,22 +142,18 @@ function shootBall() {
 
   ball.style.opacity = "1";
 
-  // target inside goal
-  const padding = 20;
   const targetX =
-    goalRect.left + padding +
-    Math.random() * (goalRect.width - padding * 2);
+    goalRect.left + 20 +
+    Math.random() * (goalRect.width - 40);
 
-  let speedY = 20;
-
-  let curveStrength = (Math.random() * 0.6 + 0.4);
-  let direction = (targetX > x) ? 1 : -1;
-
+  let speedY = 9;
+  let curve = (Math.random() * 0.6 + 0.4);
+  let direction = targetX > x ? 1 : -1;
   let velocityX = 0;
 
   const interval = setInterval(() => {
 
-    velocityX += direction * curveStrength * 0.2;
+    velocityX += direction * curve * 0.2;
 
     x += velocityX;
     y -= speedY;
@@ -144,26 +164,41 @@ function shootBall() {
     const ballRect = ball.getBoundingClientRect();
     const goalieRect = goalie.getBoundingClientRect();
 
-    // 🧤 SAVE RULE (BEFORE FEET ONLY)
-    const goalieFeetLine = goalieRect.bottom;
-    const beforeFeet = ballRect.bottom < goalieFeetLine;
+    const goalieFeet = goalieRect.bottom;
+    const beforeFeet = ballRect.bottom < goalieFeet;
 
     const touching =
       ballRect.left < goalieRect.right &&
       ballRect.right > goalieRect.left;
 
-    // 🧤 SAVE → REFLECT BALL
+    // 🧤 SAVE LOGIC
     if (beforeFeet && touching) {
       clearInterval(interval);
 
       saves++;
       counterText.textContent = `Saves: ${saves}/3`;
 
-      // 🔄 REFLECTION
+      // 🏆 WIN CONDITION
+      if (saves >= 3) {
+        gameActive = false;
+
+        const g = goalieRect;
+
+        ball.style.transition = "0.3s ease";
+        ball.style.top = (g.top + 20) + "px";
+        ball.style.left = (g.left + g.width / 2 - 10) + "px";
+
+        message.textContent = "🎉 Happy Birthday, Fiks!";
+        spawnConfetti();
+
+        return;
+      }
+
+      // 🔄 NORMAL SAVE (BOUNCE)
       let bounceY = 8;
       let bounceX = (Math.random() - 0.5) * 6;
 
-      const bounceInterval = setInterval(() => {
+      const bounce = setInterval(() => {
         y += bounceY;
         x += bounceX;
 
@@ -171,14 +206,8 @@ function shootBall() {
         ball.style.left = x + "px";
 
         if (y > window.innerHeight) {
-          clearInterval(bounceInterval);
+          clearInterval(bounce);
           ball.style.opacity = "0";
-
-          if (saves >= 3) {
-            gameActive = false;
-            message.textContent = "🎉 Happy Birthday, Fiks!";
-          }
-
           setTimeout(shootBall, 900);
         }
 
@@ -197,7 +226,7 @@ function shootBall() {
   }, 20);
 }
 
-// 🧠 INIT
+// 🧠 INIT GAME
 window.onload = () => {
   const bounds = getGoalBounds();
   goalieX = (bounds.left + bounds.right) / 2;
