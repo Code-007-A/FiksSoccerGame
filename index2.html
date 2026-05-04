@@ -105,27 +105,46 @@ window.addEventListener("wheel", (e) => {
 });
 
 // ⚽ BALL MOVEMENT (THIS WAS MISSING BEFORE)
+
 function shootBall() {
   if (!gameActive) return;
 
   const goalRect = getGoalBounds();
 
-  let x = window.innerWidth / 2;
+  // 🎯 RANDOM START POSITION (left / center / right)
+  const startZones = [
+    window.innerWidth * 0.2,
+    window.innerWidth * 0.5,
+    window.innerWidth * 0.8
+  ];
+
+  let x = startZones[Math.floor(Math.random() * startZones.length)];
   let y = window.innerHeight - 60;
 
   ball.style.opacity = "1";
 
-  const minX = goalRect.left + 10;
-  const maxX = goalRect.right - 10;
-  const targetX = minX + Math.random() * (maxX - minX);
+  // 🎯 TARGET ALWAYS INSIDE GOAL
+  const padding = 20;
+  const targetX =
+    goalRect.left + padding +
+    Math.random() * (goalRect.width - padding * 2);
 
-  let speedY = 38;
-  let speedX = (targetX - x) / 60;
+  // ⚡ SPEED SETTINGS
+  let speedY = 9;
+
+  // 🔥 CURVE CONTROL (this creates angled shots)
+  let curveStrength = (Math.random() * 0.6 + 0.4); // 0.4 - 1.0
+  let direction = (targetX > x) ? 1 : -1;
+
+  let velocityX = 0;
 
   const interval = setInterval(() => {
 
+    // 🧠 CURVE PHYSICS (gradual turning toward target)
+    velocityX += direction * curveStrength * 0.2;
+
+    x += velocityX;
     y -= speedY;
-    x += speedX;
 
     ball.style.top = y + "px";
     ball.style.left = x + "px";
@@ -133,6 +152,7 @@ function shootBall() {
     const ballRect = ball.getBoundingClientRect();
     const goalieRect = goalie.getBoundingClientRect();
 
+    // 🧤 FEET RULE
     const goalieFeetLine = goalieRect.bottom;
     const beforeFeet = ballRect.bottom < goalieFeetLine;
 
@@ -140,7 +160,7 @@ function shootBall() {
       ballRect.left < goalieRect.right &&
       ballRect.right > goalieRect.left;
 
-    // 🧤 SAVE RULE
+    // 🧤 SAVE
     if (beforeFeet && touching) {
       clearInterval(interval);
 
@@ -158,7 +178,7 @@ function shootBall() {
       return;
     }
 
-    // ❌ miss
+    // ❌ MISS (reaches goal)
     if (y <= goalRect.top) {
       clearInterval(interval);
       ball.style.opacity = "0";
@@ -167,6 +187,13 @@ function shootBall() {
 
   }, 20);
 }
+
+
+  
+
+
+
+  
 
 // 🧠 INIT GAME
 window.onload = () => {
