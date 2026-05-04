@@ -107,7 +107,7 @@ function getGoalBounds() {
   return goal.getBoundingClientRect();
 }
 
-// 🧤 GOALIE MOVEMENT (LOCKED)
+// 🧤 GOALIE MOVE (LOCKED)
 function moveGoalie(x) {
   const bounds = getGoalBounds();
   const goalieWidth = goalie.offsetWidth;
@@ -139,6 +139,14 @@ function spawnConfetti() {
     document.body.appendChild(c);
     setTimeout(() => c.remove(), 5000);
   }
+}
+
+// ⚽ RESET BALL (IMPORTANT FIX)
+function resetBall() {
+  ball.style.transition = "none";
+  ball.style.opacity = "0";
+  ball.style.left = window.innerWidth / 2 + "px";
+  ball.style.top = window.innerHeight - 60 + "px";
 }
 
 // ⚽ SHOOT BALL
@@ -206,7 +214,6 @@ function shootBall() {
         message.textContent = "🎉 Happy Birthday, Fiks!";
         spawnConfetti();
 
-        // ⏱️ SHOW RESTART BUTTON AFTER 1 SECOND
         setTimeout(() => {
           restartBtn.style.display = "block";
         }, 1000);
@@ -246,7 +253,7 @@ function shootBall() {
   }, 20);
 }
 
-// 🔄 RESTART GAME
+// 🔄 RESTART GAME (FULL RESET)
 restartBtn.addEventListener("click", () => {
   saves = 0;
   gameActive = true;
@@ -255,13 +262,15 @@ restartBtn.addEventListener("click", () => {
   counterText.textContent = "Saves: 0/3";
   restartBtn.style.display = "none";
 
-  ball.style.opacity = "0";
-
   const bounds = getGoalBounds();
   goalieX = (bounds.left + bounds.right) / 2;
   moveGoalie(goalieX);
 
-  shootBall();
+  resetBall();
+
+  setTimeout(() => {
+    shootBall();
+  }, 500);
 });
 
 // 🧠 INIT
@@ -270,7 +279,11 @@ window.onload = () => {
   goalieX = (bounds.left + bounds.right) / 2;
   moveGoalie(goalieX);
 
-  shootBall();
+  resetBall();
+
+  setTimeout(() => {
+    shootBall();
+  }, 500);
 };
 
 </script>
