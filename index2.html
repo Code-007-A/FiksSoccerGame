@@ -116,7 +116,7 @@ function getGoalBounds() {
   return goal.getBoundingClientRect();
 }
 
-// 🧤 GOALIE MOUSE CONTROL (LEFT / RIGHT ONLY)
+// 🧤 GOALIE MOUSE CONTROL
 window.addEventListener("mousemove", (e) => {
   if (!gameActive) return;
 
@@ -147,13 +147,12 @@ function spawnConfetti() {
 
 // ⚽ RESET BALL
 function resetBall() {
-  ball.style.transition = "none";
   ball.style.opacity = "0";
   ball.style.left = window.innerWidth / 2 + "px";
   ball.style.top = window.innerHeight - 60 + "px";
 }
 
-// ⚽ SHOOT BALL
+// ⚽ SHOOT BALL (RESPONSIVE FIX APPLIED)
 function shootBall() {
   if (!gameActive) return;
 
@@ -174,7 +173,9 @@ function shootBall() {
     goalRect.left + 20 +
     Math.random() * (goalRect.width - 40);
 
-  let speedY = 9;
+  // ⚽ RESPONSIVE SPEED FIX
+  let speedY = window.innerHeight * 0.015;
+
   let curve = (Math.random() * 0.6 + 0.4);
   let direction = targetX > x ? 1 : -1;
   let velocityX = 0;
@@ -184,7 +185,9 @@ function shootBall() {
     velocityX += direction * curve * 0.2;
 
     x += velocityX;
-    y -= speedY;
+
+    // ⚽ FIX: responsive vertical movement
+    y -= window.innerHeight * 0.015;
 
     ball.style.top = y + "px";
     ball.style.left = x + "px";
@@ -225,7 +228,7 @@ function shootBall() {
         return;
       }
 
-      // 🔄 BOUNCE SAVE
+      // 🔄 BOUNCE
       let bounceY = 8;
       let bounceX = (Math.random() - 0.5) * 6;
 
@@ -257,7 +260,7 @@ function shootBall() {
   }, 20);
 }
 
-// 🔄 RESTART GAME
+// 🔄 RESTART
 restartBtn.addEventListener("click", () => {
   saves = 0;
   gameActive = true;
@@ -265,9 +268,6 @@ restartBtn.addEventListener("click", () => {
   message.textContent = "";
   counterText.textContent = "Saves: 0/3";
   restartBtn.style.display = "none";
-
-  const bounds = getGoalBounds();
-  goalieX = (bounds.left + bounds.right) / 2;
 
   resetBall();
 
@@ -278,9 +278,6 @@ restartBtn.addEventListener("click", () => {
 
 // 🧠 INIT
 window.onload = () => {
-  const bounds = getGoalBounds();
-  goalieX = (bounds.left + bounds.right) / 2;
-
   resetBall();
 
   setTimeout(() => {
