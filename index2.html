@@ -5,54 +5,52 @@
 <title>Soccer Save Game</title>
 
 <style>
-  body {
-    margin: 0;
-    background: #0b6623;
-    overflow: hidden;
-    font-family: Arial;
-  }
+body {
+  margin: 0;
+  background: #0b6623;
+  overflow: hidden;
+  font-family: Arial;
+}
 
-  .goal {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 1100px;
-    height: 160px;
-    border: 4px solid white;
-  }
+.goal {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 160px;
+  border: 4px solid white;
+}
 
-  /* 🧤 40% wider goalie */
-  #goalie {
-    position: absolute;
-    top: 70px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 75px;
-  }
+#goalie {
+  position: absolute;
+  top: 70px;
+  width: 168px; /* 40% wider */
+  transform: translateX(-50%);
+}
 
-  #ball {
-    position: absolute;
-    width: 25px;
-    height: 25px;
-  }
+#ball {
+  position: absolute;
+  width: 35px;
+  height: 35px;
+}
 
-  #message {
-    position: absolute;
-    top: 200px;
-    width: 100%;
-    text-align: center;
-    font-size: 36px;
-    color: white;
-  }
+#message {
+  position: absolute;
+  top: 200px;
+  width: 100%;
+  text-align: center;
+  font-size: 36px;
+  color: white;
+}
 
-  #counter {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    font-size: 22px;
-    color: white;
-  }
+#counter {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 22px;
+  color: white;
+}
 </style>
 </head>
 
@@ -78,11 +76,12 @@ let saves = 0;
 let goalieX = window.innerWidth / 2;
 let gameActive = true;
 
-// 🧤 GOALIE LIMIT MOVEMENT
+// 🧠 GOAL BOUNDS
 function getGoalBounds() {
   return goal.getBoundingClientRect();
 }
 
+// 🧤 MOVE GOALIE (LOCKED INSIDE POSTS)
 function moveGoalie(x) {
   const bounds = getGoalBounds();
   const goalieWidth = goalie.offsetWidth;
@@ -97,21 +96,17 @@ function moveGoalie(x) {
 // 🎮 SCROLL CONTROL
 window.addEventListener("wheel", (e) => {
   const speed = 25;
-
-  if (e.deltaY > 0) goalieX -= speed;
-  else goalieX += speed;
-
+  goalieX += (e.deltaY > 0) ? -speed : speed;
   moveGoalie(goalieX);
 });
 
-// ⚽ BALL MOVEMENT (THIS WAS MISSING BEFORE)
-
+// ⚽ SHOOT BALL (CURVED RANDOM SHOTS)
 function shootBall() {
   if (!gameActive) return;
 
   const goalRect = getGoalBounds();
 
-  // 🎯 RANDOM START POSITION (left / center / right)
+  // random start (left / center / right)
   const startZones = [
     window.innerWidth * 0.2,
     window.innerWidth * 0.5,
@@ -123,24 +118,21 @@ function shootBall() {
 
   ball.style.opacity = "1";
 
-  // 🎯 TARGET ALWAYS INSIDE GOAL
+  // target inside goal
   const padding = 20;
   const targetX =
     goalRect.left + padding +
     Math.random() * (goalRect.width - padding * 2);
 
-  // ⚡ SPEED SETTINGS
-  let speedY = 20;
+  let speedY = 9;
 
-  // 🔥 CURVE CONTROL (this creates angled shots)
-  let curveStrength = (Math.random() * 0.6 + 0.4); // 0.4 - 1.0
+  let curveStrength = (Math.random() * 0.6 + 0.4);
   let direction = (targetX > x) ? 1 : -1;
 
   let velocityX = 0;
 
   const interval = setInterval(() => {
 
-    // 🧠 CURVE PHYSICS (gradual turning toward target)
     velocityX += direction * curveStrength * 0.2;
 
     x += velocityX;
@@ -152,7 +144,7 @@ function shootBall() {
     const ballRect = ball.getBoundingClientRect();
     const goalieRect = goalie.getBoundingClientRect();
 
-    // 🧤 FEET RULE
+    // 🧤 SAVE RULE (BEFORE FEET ONLY)
     const goalieFeetLine = goalieRect.bottom;
     const beforeFeet = ballRect.bottom < goalieFeetLine;
 
@@ -160,25 +152,42 @@ function shootBall() {
       ballRect.left < goalieRect.right &&
       ballRect.right > goalieRect.left;
 
-    // 🧤 SAVE
+    // 🧤 SAVE → REFLECT BALL
     if (beforeFeet && touching) {
       clearInterval(interval);
 
       saves++;
       counterText.textContent = `Saves: ${saves}/3`;
 
-      ball.style.opacity = "0";
+      // 🔄 REFLECTION
+      let bounceY = 8;
+      let bounceX = (Math.random() - 0.5) * 6;
 
-      if (saves >= 3) {
-        gameActive = false;
-        message.textContent = "🎉 Happy Birthday, Fiks!";
-      }
+      const bounceInterval = setInterval(() => {
+        y += bounceY;
+        x += bounceX;
 
-      setTimeout(shootBall, 900);
+        ball.style.top = y + "px";
+        ball.style.left = x + "px";
+
+        if (y > window.innerHeight) {
+          clearInterval(bounceInterval);
+          ball.style.opacity = "0";
+
+          if (saves >= 3) {
+            gameActive = false;
+            message.textContent = "🎉 Happy Birthday, Fiks!";
+          }
+
+          setTimeout(shootBall, 900);
+        }
+
+      }, 20);
+
       return;
     }
 
-    // ❌ MISS (reaches goal)
+    // ❌ MISS
     if (y <= goalRect.top) {
       clearInterval(interval);
       ball.style.opacity = "0";
@@ -188,20 +197,13 @@ function shootBall() {
   }, 20);
 }
 
-
-  
-
-
-
-  
-
-// 🧠 INIT GAME
+// 🧠 INIT
 window.onload = () => {
   const bounds = getGoalBounds();
   goalieX = (bounds.left + bounds.right) / 2;
   moveGoalie(goalieX);
 
-  shootBall(); // 🔥 THIS FIXES YOUR ISSUE
+  shootBall();
 };
 
 </script>
