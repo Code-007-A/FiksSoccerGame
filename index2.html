@@ -5,13 +5,24 @@
 <title>Soccer Save Game</title>
 
 <style>
-body {
+/* 🚫 FULL SCROLL LOCK */
+html, body {
   margin: 0;
-  background: #0b6623;
+  padding: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
+  position: fixed;
+  touch-action: none;
   font-family: Arial;
 }
 
+/* GAME BACKGROUND */
+body {
+  background: #0b6623;
+}
+
+/* GOAL */
 .goal {
   position: absolute;
   top: 20px;
@@ -19,18 +30,16 @@ body {
   transform: translateX(-50%);
   width: 900px;
   height: 160px;
-
-  /* outer frame */
   border: 4px solid white;
 
-  /* ⚽ NET EFFECT */
+  /* net effect */
   background-image:
     linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px);
-
   background-size: 20px 20px;
 }
 
+/* GOALIE */
 #goalie {
   position: absolute;
   top: 70px;
@@ -38,12 +47,14 @@ body {
   transform: translateX(-50%);
 }
 
+/* BALL */
 #ball {
   position: absolute;
   width: 35px;
   height: 35px;
 }
 
+/* UI */
 #message {
   position: absolute;
   top: 200px;
@@ -72,6 +83,7 @@ body {
   cursor: pointer;
 }
 
+/* CONFETTI */
 .confetti {
   position: absolute;
   top: -20px;
@@ -95,7 +107,6 @@ body {
 
 <div id="message"></div>
 <div id="counter">Saves: 0/3</div>
-
 <button id="restartBtn">Start Over</button>
 
 <script>
@@ -128,7 +139,7 @@ function moveGoalie(x) {
   goalie.style.left = goalieX + "px";
 }
 
-// 🎮 SCROLL CONTROL
+// 🎮 SCROLL CONTROL (only if game active)
 window.addEventListener("wheel", (e) => {
   if (!gameActive) return;
 
@@ -150,7 +161,7 @@ function spawnConfetti() {
   }
 }
 
-// ⚽ RESET BALL (IMPORTANT FIX)
+// ⚽ RESET BALL
 function resetBall() {
   ball.style.transition = "none";
   ball.style.opacity = "0";
@@ -262,7 +273,7 @@ function shootBall() {
   }, 20);
 }
 
-// 🔄 RESTART GAME (FULL RESET)
+// 🔄 RESTART
 restartBtn.addEventListener("click", () => {
   saves = 0;
   gameActive = true;
@@ -277,9 +288,7 @@ restartBtn.addEventListener("click", () => {
 
   resetBall();
 
-  setTimeout(() => {
-    shootBall();
-  }, 500);
+  setTimeout(() => shootBall(), 500);
 });
 
 // 🧠 INIT
@@ -290,9 +299,7 @@ window.onload = () => {
 
   resetBall();
 
-  setTimeout(() => {
-    shootBall();
-  }, 500);
+  setTimeout(() => shootBall(), 500);
 };
 
 </script>
