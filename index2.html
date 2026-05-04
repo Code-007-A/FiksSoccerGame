@@ -17,26 +17,6 @@ html, body {
   background: #0b6623;
 }
 
-/* ⚽ START SCREEN */
-#startScreen {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  z-index: 100;
-}
-
-#startBtn {
-  padding: 15px 30px;
-  font-size: 22px;
-  cursor: pointer;
-}
-
-/* GOAL */
 .goal {
   position: absolute;
   top: 20px;
@@ -82,25 +62,32 @@ html, body {
   color: white;
 }
 
-#restartBtn {
+#startScreen {
   position: absolute;
-  top: 280px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 12px 20px;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+#startBtn, #restartBtn {
+  padding: 12px 24px;
   font-size: 18px;
-  display: none;
   cursor: pointer;
+  margin-top: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- 🟢 START SCREEN -->
 <div id="startScreen">
   <h1 style="color:white;">Soccer Save Game</h1>
-  <button id="startBtn">Press to Start</button>
+  <button id="startBtn">Start Game</button>
 </div>
 
 <div class="goal"></div>
@@ -110,7 +97,7 @@ html, body {
 
 <div id="message"></div>
 <div id="counter">Saves: 0/3</div>
-<button id="restartBtn">Start Over</button>
+<button id="restartBtn" style="display:none;">Start Over</button>
 
 <script>
 
@@ -133,7 +120,7 @@ function getGoalBounds() {
   return goal.getBoundingClientRect();
 }
 
-// 🧤 MOUSE CONTROL (ONLY WHEN GAME ACTIVE)
+// 🧤 MOUSE CONTROL
 window.addEventListener("mousemove", (e) => {
   if (!gameActive) return;
 
@@ -154,6 +141,27 @@ function resetBall() {
   ball.style.opacity = "0";
   ball.style.left = window.innerWidth / 2 + "px";
   ball.style.top = window.innerHeight - 60 + "px";
+}
+
+// 🧤 TIGHT HITBOX COLLISION (REAL TOUCH FEEL)
+function checkGoalieHit(ballRect, goalieRect) {
+
+  const paddingX = goalieRect.width * 0.25;
+  const paddingY = goalieRect.height * 0.35;
+
+  const hitbox = {
+    left: goalieRect.left + paddingX,
+    right: goalieRect.right - paddingX,
+    top: goalieRect.top + paddingY,
+    bottom: goalieRect.bottom
+  };
+
+  return (
+    ballRect.right > hitbox.left &&
+    ballRect.left < hitbox.right &&
+    ballRect.bottom > hitbox.top &&
+    ballRect.top < hitbox.bottom
+  );
 }
 
 // ⚽ SHOOT BALL
@@ -195,14 +203,8 @@ function shootBall() {
     const ballRect = ball.getBoundingClientRect();
     const goalieRect = goalie.getBoundingClientRect();
 
-    const beforeFeet = ballRect.bottom < goalieRect.bottom;
-
-    const touching =
-      ballRect.left < goalieRect.right &&
-      ballRect.right > goalieRect.left;
-
-    // 🧤 SAVE
-    if (beforeFeet && touching) {
+    // 🧤 REAL TOUCH SAVE CHECK
+    if (checkGoalieHit(ballRect, goalieRect)) {
       clearInterval(interval);
 
       saves++;
@@ -215,6 +217,7 @@ function shootBall() {
         return;
       }
 
+      ball.style.opacity = "0";
       setTimeout(shootBall, 800);
       return;
     }
@@ -242,21 +245,23 @@ startBtn.addEventListener("click", () => {
 
   resetBall();
 
-  setTimeout(() => {
-    shootBall();
-  }, 500);
+  setTimeout(() => shootBall(), 500);
 });
 
-// 🔄 RESTART BACK TO START SCREEN
+// 🔄 RESTART
 restartBtn.addEventListener("click", () => {
   gameActive = false;
   startScreen.style.display = "flex";
-  restartBtn.style.display = "none";
-  message.textContent = "";
+
+  saves = 0;
   counterText.textContent = "Saves: 0/3";
+  message.textContent = "";
+  restartBtn.style.display = "none";
+
   resetBall();
 });
 
+// 🧠 INIT
 window.onload = () => {
   resetBall();
 };
