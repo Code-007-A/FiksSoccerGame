@@ -17,7 +17,7 @@ body {
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  width: 900px; /* adjust goal width here */
+  width: 900px;
   height: 160px;
   border: 4px solid white;
 }
@@ -25,7 +25,7 @@ body {
 #goalie {
   position: absolute;
   top: 70px;
-  width: 168px; /* 40% wider */
+  width: 168px;
   transform: translateX(-50%);
 }
 
@@ -52,6 +52,17 @@ body {
   color: white;
 }
 
+#restartBtn {
+  position: absolute;
+  top: 280px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  font-size: 18px;
+  display: none;
+  cursor: pointer;
+}
+
 .confetti {
   position: absolute;
   top: -20px;
@@ -76,6 +87,8 @@ body {
 <div id="message"></div>
 <div id="counter">Saves: 0/3</div>
 
+<button id="restartBtn">Start Over</button>
+
 <script>
 
 const goalie = document.getElementById("goalie");
@@ -83,17 +96,18 @@ const ball = document.getElementById("ball");
 const goal = document.querySelector(".goal");
 const counterText = document.getElementById("counter");
 const message = document.getElementById("message");
+const restartBtn = document.getElementById("restartBtn");
 
 let saves = 0;
 let gameActive = true;
 let goalieX = window.innerWidth / 2;
 
-// 🧠 GET GOAL BOUNDS
+// 🧠 GOAL BOUNDS
 function getGoalBounds() {
   return goal.getBoundingClientRect();
 }
 
-// 🧤 GOALIE MOVEMENT (LOCKED INSIDE POSTS)
+// 🧤 GOALIE MOVEMENT (LOCKED)
 function moveGoalie(x) {
   const bounds = getGoalBounds();
   const goalieWidth = goalie.offsetWidth;
@@ -107,6 +121,8 @@ function moveGoalie(x) {
 
 // 🎮 SCROLL CONTROL
 window.addEventListener("wheel", (e) => {
+  if (!gameActive) return;
+
   const speed = 25;
   goalieX += (e.deltaY > 0) ? -speed : speed;
   moveGoalie(goalieX);
@@ -164,21 +180,20 @@ function shootBall() {
     const ballRect = ball.getBoundingClientRect();
     const goalieRect = goalie.getBoundingClientRect();
 
-    const goalieFeet = goalieRect.bottom;
-    const beforeFeet = ballRect.bottom < goalieFeet;
+    const beforeFeet = ballRect.bottom < goalieRect.bottom;
 
     const touching =
       ballRect.left < goalieRect.right &&
       ballRect.right > goalieRect.left;
 
-    // 🧤 SAVE LOGIC
+    // 🧤 SAVE
     if (beforeFeet && touching) {
       clearInterval(interval);
 
       saves++;
       counterText.textContent = `Saves: ${saves}/3`;
 
-      // 🏆 WIN CONDITION
+      // 🏆 WIN
       if (saves >= 3) {
         gameActive = false;
 
@@ -191,10 +206,15 @@ function shootBall() {
         message.textContent = "🎉 Happy Birthday, Fiks!";
         spawnConfetti();
 
+        // ⏱️ SHOW RESTART BUTTON AFTER 1 SECOND
+        setTimeout(() => {
+          restartBtn.style.display = "block";
+        }, 1000);
+
         return;
       }
 
-      // 🔄 NORMAL SAVE (BOUNCE)
+      // 🔄 BOUNCE SAVE
       let bounceY = 8;
       let bounceX = (Math.random() - 0.5) * 6;
 
@@ -226,7 +246,25 @@ function shootBall() {
   }, 20);
 }
 
-// 🧠 INIT GAME
+// 🔄 RESTART GAME
+restartBtn.addEventListener("click", () => {
+  saves = 0;
+  gameActive = true;
+
+  message.textContent = "";
+  counterText.textContent = "Saves: 0/3";
+  restartBtn.style.display = "none";
+
+  ball.style.opacity = "0";
+
+  const bounds = getGoalBounds();
+  goalieX = (bounds.left + bounds.right) / 2;
+  moveGoalie(goalieX);
+
+  shootBall();
+});
+
+// 🧠 INIT
 window.onload = () => {
   const bounds = getGoalBounds();
   goalieX = (bounds.left + bounds.right) / 2;
