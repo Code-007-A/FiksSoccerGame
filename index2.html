@@ -4,25 +4,6 @@
 <meta charset="UTF-8">
 <title>Soccer Save Game</title>
 
-<div id="startScreen">
-  <h1 style="color:white;">Soccer Save Game</h1>
-
-  <p id="instructions" style="
-    color:white;
-    font-size:22px;
-    text-align:center;
-    max-width:600px;
-    margin:20px;
-  ">
-    Move your mouse left and right to block soccer ball.
-  </p>
-
-  <button id="startBtn">Start Game</button>
-</div>
-
-
-  
-
 <style>
 html, body {
   margin: 0;
@@ -93,6 +74,15 @@ html, body {
   z-index: 100;
 }
 
+#instructions {
+  color: white;
+  font-size: 22px;
+  text-align: center;
+  max-width: 600px;
+  margin: 20px;
+  line-height: 1.5;
+}
+
 #startBtn, #restartBtn {
   padding: 12px 24px;
   font-size: 18px;
@@ -106,17 +96,34 @@ html, body {
 
 <div id="startScreen">
   <h1 style="color:white;">Soccer Save Game</h1>
+
+  <p id="instructions">
+    Move your mouse left and right to block soccer ball.
+  </p>
+
   <button id="startBtn">Start Game</button>
 </div>
 
 <div class="goal"></div>
 
 <img id="goalie" src="goalie.png">
-<img id="ball" src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg">
+
+<img id="ball"
+src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg">
 
 <div id="message"></div>
 <div id="counter">Saves: 0/3</div>
-<button id="restartBtn" style="display:none;">Start Over</button>
+
+<button id="restartBtn" style="
+position:absolute;
+top:260px;
+left:50%;
+transform:translateX(-50%);
+display:none;
+z-index:20;
+">
+Start Over
+</button>
 
 <script>
 
@@ -141,6 +148,7 @@ function getGoalBounds() {
 
 // 🧤 MOUSE CONTROL
 window.addEventListener("mousemove", (e) => {
+
   if (!gameActive) return;
 
   const bounds = getGoalBounds();
@@ -152,17 +160,22 @@ window.addEventListener("mousemove", (e) => {
   let x = e.clientX;
 
   goalieX = Math.max(minX, Math.min(maxX, x));
+
   goalie.style.left = goalieX + "px";
+
 });
 
 // ⚽ RESET BALL
 function resetBall() {
+
   ball.style.opacity = "0";
+
   ball.style.left = window.innerWidth / 2 + "px";
   ball.style.top = window.innerHeight - 60 + "px";
+
 }
 
-// 🧤 TIGHT HITBOX COLLISION (REAL TOUCH FEEL)
+// 🧤 REALISTIC HITBOX
 function checkGoalieHit(ballRect, goalieRect) {
 
   const paddingX = goalieRect.width * 0.25;
@@ -185,6 +198,7 @@ function checkGoalieHit(ballRect, goalieRect) {
 
 // ⚽ SHOOT BALL
 function shootBall() {
+
   if (!gameActive) return;
 
   const goalRect = getGoalBounds();
@@ -196,6 +210,7 @@ function shootBall() {
   ];
 
   let x = startZones[Math.floor(Math.random() * startZones.length)];
+
   let y = window.innerHeight - 60;
 
   ball.style.opacity = "1";
@@ -204,9 +219,10 @@ function shootBall() {
     goalRect.left + 20 +
     Math.random() * (goalRect.width - 40);
 
-  let speedY = window.innerHeight * 0.015;
   let curve = (Math.random() * 0.6 + 0.4);
+
   let direction = targetX > x ? 1 : -1;
+
   let velocityX = 0;
 
   const interval = setInterval(() => {
@@ -214,6 +230,7 @@ function shootBall() {
     velocityX += direction * curve * 0.2;
 
     x += velocityX;
+
     y -= window.innerHeight * 0.015;
 
     ball.style.top = y + "px";
@@ -222,29 +239,41 @@ function shootBall() {
     const ballRect = ball.getBoundingClientRect();
     const goalieRect = goalie.getBoundingClientRect();
 
-    // 🧤 REAL TOUCH SAVE CHECK
+    // 🧤 SAVE
     if (checkGoalieHit(ballRect, goalieRect)) {
+
       clearInterval(interval);
 
       saves++;
+
       counterText.textContent = `Saves: ${saves}/3`;
 
+      // 🏆 WIN
       if (saves >= 3) {
+
         gameActive = false;
+
         message.textContent = "🎉 Happy Birthday, Fiks!";
+
         restartBtn.style.display = "block";
+
         return;
       }
 
       ball.style.opacity = "0";
+
       setTimeout(shootBall, 800);
+
       return;
     }
 
     // ❌ MISS
     if (y <= goalRect.top) {
+
       clearInterval(interval);
+
       ball.style.opacity = "0";
+
       setTimeout(shootBall, 800);
     }
 
@@ -253,36 +282,49 @@ function shootBall() {
 
 // ▶ START GAME
 startBtn.addEventListener("click", () => {
+
   startScreen.style.display = "none";
 
   saves = 0;
+
   gameActive = true;
 
   counterText.textContent = "Saves: 0/3";
+
   message.textContent = "";
+
   restartBtn.style.display = "none";
 
   resetBall();
 
   setTimeout(() => shootBall(), 500);
+
 });
 
 // 🔄 RESTART
 restartBtn.addEventListener("click", () => {
+
   gameActive = false;
+
   startScreen.style.display = "flex";
 
   saves = 0;
+
   counterText.textContent = "Saves: 0/3";
+
   message.textContent = "";
+
   restartBtn.style.display = "none";
 
   resetBall();
+
 });
 
 // 🧠 INIT
 window.onload = () => {
+
   resetBall();
+
 };
 
 </script>
