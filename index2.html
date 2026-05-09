@@ -25,11 +25,6 @@ html, body {
   width: 900px;
   height: 160px;
   border: 4px solid white;
-
-  background-image:
-    linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px);
-  background-size: 20px 20px;
 }
 
 #goalie {
@@ -52,7 +47,6 @@ html, body {
   text-align: center;
   font-size: 36px;
   color: white;
-  z-index: 10;
 }
 
 #counter {
@@ -61,7 +55,6 @@ html, body {
   left: 10px;
   font-size: 22px;
   color: white;
-  z-index: 10;
 }
 
 #startScreen {
@@ -122,16 +115,12 @@ html, body {
 <div class="goal"></div>
 
 <img id="goalie" src="goalie.png">
-
-<img id="ball"
-src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg">
+<img id="ball" src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg">
 
 <div id="message"></div>
 <div id="counter">Saves: 0/3</div>
 
-<button id="restartBtn" style="display:none;">
-Start Over
-</button>
+<button id="restartBtn" style="display:none;">Start Over</button>
 
 <script>
 
@@ -197,11 +186,10 @@ function startJump() {
   if (jumpAnim) return;
 
   jumpAnim = setInterval(() => {
-    if (goalie.src.includes("goalie.png")) {
-      goalie.src = "jump.png";
-    } else {
-      goalie.src = "goalie.png";
-    }
+    goalie.src =
+      goalie.src.includes("goalie.png")
+        ? "jump.png"
+        : "goalie.png";
   }, 400);
 }
 
@@ -225,6 +213,7 @@ function launchConfetti() {
 
     let y = -30;
     let x = parseFloat(c.style.left);
+
     let drift = (Math.random() - 0.5) * 4;
     let speed = Math.random() * 4 + 2;
 
@@ -243,8 +232,9 @@ function launchConfetti() {
   }
 }
 
-// ⚽ SHOOT BALL
+// ⚽ SHOOT BALL (FIXED)
 function shootBall() {
+
   if (!gameActive) return;
 
   const goalRect = getGoalBounds();
@@ -256,14 +246,15 @@ function shootBall() {
 
   const targetX = goalRect.left + Math.random() * goalRect.width;
 
-  let direction = targetX > x ? 1 : -1;
   let velocityX = 0;
+  let speedY = window.innerHeight * 0.018; // ✅ FIXED SCALE SPEED
 
   const interval = setInterval(() => {
 
-    velocityX += direction * 0.3;
+    velocityX += (targetX > x ? 1 : -1) * 0.3;
+
     x += velocityX;
-    y -= 8;
+    y -= speedY; // ✅ now always reaches goal properly
 
     ball.style.left = x + "px";
     ball.style.top = y + "px";
@@ -292,18 +283,18 @@ function shootBall() {
       }
 
       ball.style.opacity = "0";
-      setTimeout(shootBall, 800);
+      setTimeout(shootBall, 700);
       return;
     }
 
     // MISS
-    if (y < goalRect.top) {
+    if (y <= goalRect.top - 50) { // ✅ ensures it fully passes goal
       clearInterval(interval);
       ball.style.opacity = "0";
-      setTimeout(shootBall, 800);
+      setTimeout(shootBall, 700);
     }
 
-  }, 20);
+  }, 16);
 }
 
 // ▶ START
