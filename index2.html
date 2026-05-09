@@ -29,7 +29,6 @@ html, body {
   background-image:
     linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px);
-
   background-size: 20px 20px;
 }
 
@@ -53,7 +52,7 @@ html, body {
   text-align: center;
   font-size: 36px;
   color: white;
-  z-index: 20;
+  z-index: 10;
 }
 
 #counter {
@@ -62,7 +61,7 @@ html, body {
   left: 10px;
   font-size: 22px;
   color: white;
-  z-index: 20;
+  z-index: 10;
 }
 
 #startScreen {
@@ -83,7 +82,6 @@ html, body {
   text-align: center;
   max-width: 600px;
   margin: 20px;
-  line-height: 1.5;
 }
 
 #startBtn, #restartBtn {
@@ -95,11 +93,9 @@ html, body {
 
 .confetti {
   position: absolute;
-  width: 50px;
-  height: 50px;
+  width: 18px;
+  height: 18px;
   top: -30px;
-  opacity: 0.9;
-  z-index: 999;
   clip-path: polygon(
     25% 0%, 75% 0%,
     100% 50%,
@@ -114,7 +110,6 @@ html, body {
 <body>
 
 <div id="startScreen">
-
   <h1 style="color:white;">Soccer Save Game</h1>
 
   <p id="instructions">
@@ -122,7 +117,6 @@ html, body {
   </p>
 
   <button id="startBtn">Start Game</button>
-
 </div>
 
 <div class="goal"></div>
@@ -133,17 +127,9 @@ html, body {
 src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg">
 
 <div id="message"></div>
-
 <div id="counter">Saves: 0/3</div>
 
-<button id="restartBtn" style="
-position:absolute;
-top:260px;
-left:50%;
-transform:translateX(-50%);
-display:none;
-z-index:20;
-">
+<button id="restartBtn" style="display:none;">
 Start Over
 </button>
 
@@ -163,6 +149,8 @@ let saves = 0;
 let gameActive = false;
 let goalieX = window.innerWidth / 2;
 
+let jumpAnim = null;
+
 // 🧠 GOAL BOUNDS
 function getGoalBounds() {
   return goal.getBoundingClientRect();
@@ -170,15 +158,12 @@ function getGoalBounds() {
 
 // 🧤 MOUSE CONTROL
 window.addEventListener("mousemove", (e) => {
-
   if (!gameActive) return;
 
   const bounds = getGoalBounds();
-
   const goalieWidth = goalie.offsetWidth;
 
   const minX = bounds.left + goalieWidth / 2;
-
   const maxX = bounds.right - goalieWidth / 2;
 
   let x = e.clientX;
@@ -186,244 +171,167 @@ window.addEventListener("mousemove", (e) => {
   goalieX = Math.max(minX, Math.min(maxX, x));
 
   goalie.style.left = goalieX + "px";
-
 });
 
 // ⚽ RESET BALL
 function resetBall() {
-
   ball.style.opacity = "0";
-
   ball.style.left = window.innerWidth / 2 + "px";
-
   ball.style.top = window.innerHeight - 60 + "px";
-
 }
 
-// 🧤 HITBOX
+// 🧤 HIT DETECTION
 function checkGoalieHit(ballRect, goalieRect) {
-
   const paddingX = goalieRect.width * 0.25;
-
   const paddingY = goalieRect.height * 0.35;
 
-  const hitbox = {
-    left: goalieRect.left + paddingX,
-    right: goalieRect.right - paddingX,
-    top: goalieRect.top + paddingY,
-    bottom: goalieRect.bottom
-  };
-
   return (
-    ballRect.right > hitbox.left &&
-    ballRect.left < hitbox.right &&
-    ballRect.bottom > hitbox.top &&
-    ballRect.top < hitbox.bottom
+    ballRect.right > goalieRect.left + paddingX &&
+    ballRect.left < goalieRect.right - paddingX &&
+    ballRect.bottom > goalieRect.top + paddingY
   );
 }
 
-// 🎉 HEXAGON CONFETTI
-function launchConfetti() {
+// 🧤 JUMP ANIMATION
+function startJump() {
+  if (jumpAnim) return;
 
+  jumpAnim = setInterval(() => {
+    if (goalie.src.includes("goalie.png")) {
+      goalie.src = "jump.png";
+    } else {
+      goalie.src = "goalie.png";
+    }
+  }, 400);
+}
+
+function stopJump() {
+  clearInterval(jumpAnim);
+  jumpAnim = null;
+  goalie.src = "goalie.png";
+}
+
+// 🎉 CONFETTI
+function launchConfetti() {
   for (let i = 0; i < 120; i++) {
 
-    const confetti = document.createElement("div");
+    const c = document.createElement("div");
+    c.classList.add("confetti");
 
-    confetti.classList.add("confetti");
+    c.style.background = Math.random() > 0.5 ? "black" : "white";
+    c.style.left = Math.random() * window.innerWidth + "px";
 
-    // ⚫⚪ BLACK OR WHITE
-    const colors = ["black", "white"];
-
-    confetti.style.background =
-      colors[Math.floor(Math.random() * colors.length)];
-
-    confetti.style.left =
-      Math.random() * window.innerWidth + "px";
-
-    confetti.style.transform =
-      `rotate(${Math.random() * 360}deg)`;
-
-    document.body.appendChild(confetti);
+    document.body.appendChild(c);
 
     let y = -30;
-
-    let xDrift = (Math.random() - 0.5) * 4;
-
-    let speed =
-      Math.random() * 4 + 2;
-
-    let rotation =
-      Math.random() * 1;
+    let x = parseFloat(c.style.left);
+    let drift = (Math.random() - 0.5) * 4;
+    let speed = Math.random() * 4 + 2;
 
     const fall = setInterval(() => {
-
       y += speed;
+      x += drift;
 
-      let currentLeft =
-        parseFloat(confetti.style.left);
+      c.style.top = y + "px";
+      c.style.left = x + "px";
 
-      currentLeft += xDrift;
-
-      confetti.style.top = y + "px";
-
-      confetti.style.left = currentLeft + "px";
-
-      confetti.style.transform =
-        `rotate(${y * rotation}deg)`;
-
-      if (y > window.innerHeight + 40) {
-
+      if (y > window.innerHeight) {
         clearInterval(fall);
-
-        confetti.remove();
-
+        c.remove();
       }
-
     }, 20);
-
   }
-
 }
 
 // ⚽ SHOOT BALL
 function shootBall() {
-
   if (!gameActive) return;
 
   const goalRect = getGoalBounds();
 
-  const startZones = [
-    window.innerWidth * 0.2,
-    window.innerWidth * 0.5,
-    window.innerWidth * 0.8
-  ];
-
-  let x =
-    startZones[Math.floor(Math.random() * startZones.length)];
-
+  let x = window.innerWidth * (0.2 + Math.random() * 0.6);
   let y = window.innerHeight - 60;
 
   ball.style.opacity = "1";
 
-  const targetX =
-    goalRect.left + 20 +
-    Math.random() * (goalRect.width - 40);
-
-  let curve = (Math.random() * 0.6 + 0.4);
+  const targetX = goalRect.left + Math.random() * goalRect.width;
 
   let direction = targetX > x ? 1 : -1;
-
   let velocityX = 0;
 
   const interval = setInterval(() => {
 
-    velocityX += direction * curve * 0.2;
-
+    velocityX += direction * 0.3;
     x += velocityX;
-
-    y -= window.innerHeight * 0.015;
-
-    ball.style.top = y + "px";
+    y -= 8;
 
     ball.style.left = x + "px";
+    ball.style.top = y + "px";
 
     const ballRect = ball.getBoundingClientRect();
-
     const goalieRect = goalie.getBoundingClientRect();
 
-    // 🧤 SAVE
+    // SAVE
     if (checkGoalieHit(ballRect, goalieRect)) {
 
       clearInterval(interval);
 
       saves++;
+      counterText.textContent = `Saves: ${saves}/3`;
 
-      counterText.textContent =
-        `Saves: ${saves}/3`;
-
-      // 🏆 WIN
       if (saves >= 3) {
 
         gameActive = false;
-
-        message.textContent =
-          "🎉 Happy Birthday, Fiks!";
-
+        message.textContent = "🎉 Happy Birthday, Fiks!";
         restartBtn.style.display = "block";
 
+        startJump();
         launchConfetti();
 
         return;
       }
 
       ball.style.opacity = "0";
-
       setTimeout(shootBall, 800);
-
       return;
     }
 
-    // ❌ MISS
-    if (y <= goalRect.top) {
-
+    // MISS
+    if (y < goalRect.top) {
       clearInterval(interval);
-
       ball.style.opacity = "0";
-
       setTimeout(shootBall, 800);
-
     }
 
   }, 20);
-
 }
 
-// ▶ START GAME
-startBtn.addEventListener("click", () => {
-
+// ▶ START
+startBtn.onclick = () => {
   startScreen.style.display = "none";
-
   saves = 0;
-
   gameActive = true;
-
   counterText.textContent = "Saves: 0/3";
-
   message.textContent = "";
-
   restartBtn.style.display = "none";
-
   resetBall();
-
-  setTimeout(() => shootBall(), 500);
-
-});
+  shootBall();
+};
 
 // 🔄 RESTART
-restartBtn.addEventListener("click", () => {
-
+restartBtn.onclick = () => {
   gameActive = false;
-
   startScreen.style.display = "flex";
-
   saves = 0;
-
   counterText.textContent = "Saves: 0/3";
-
   message.textContent = "";
-
   restartBtn.style.display = "none";
-
+  stopJump();
   resetBall();
-
-});
-
-// 🧠 INIT
-window.onload = () => {
-
-  resetBall();
-
 };
+
+// INIT
+window.onload = resetBall;
 
 </script>
 
