@@ -124,6 +124,12 @@ html, body {
 
 <script>
 
+/* soundFX*/
+const saveSound = new Audio("sound01.mp3");
+saveSound.volume = 1.0;
+
+  
+
 const startScreen = document.getElementById("startScreen");
 const startBtn = document.getElementById("startBtn");
 
@@ -184,6 +190,18 @@ function checkGoalieHit(ballRect, goalieRect) {
     ballCenterY < goalieRect.bottom;
 
   return hit;
+
+/* save soundFX */
+saveSound.currentTime = 0;
+saveSound.play();
+
+// ⏱ stop after 0.25s
+setTimeout(() => {
+  saveSound.pause();
+}, 250);
+
+
+  
 }
 
 // 🧤 JUMP ANIMATION
