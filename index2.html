@@ -29,6 +29,7 @@ html, body {
   background-image:
     linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px);
+
   background-size: 20px 20px;
 }
 
@@ -52,6 +53,7 @@ html, body {
   text-align: center;
   font-size: 36px;
   color: white;
+  z-index: 20;
 }
 
 #counter {
@@ -60,6 +62,7 @@ html, body {
   left: 10px;
   font-size: 22px;
   color: white;
+  z-index: 20;
 }
 
 #startScreen {
@@ -89,12 +92,29 @@ html, body {
   cursor: pointer;
   margin-top: 10px;
 }
+
+.confetti {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  top: -30px;
+  opacity: 0.9;
+  z-index: 999;
+  clip-path: polygon(
+    25% 0%, 75% 0%,
+    100% 50%,
+    75% 100%,
+    25% 100%,
+    0% 50%
+  );
+}
 </style>
 </head>
 
 <body>
 
 <div id="startScreen">
+
   <h1 style="color:white;">Soccer Save Game</h1>
 
   <p id="instructions">
@@ -102,6 +122,7 @@ html, body {
   </p>
 
   <button id="startBtn">Start Game</button>
+
 </div>
 
 <div class="goal"></div>
@@ -112,6 +133,7 @@ html, body {
 src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg">
 
 <div id="message"></div>
+
 <div id="counter">Saves: 0/3</div>
 
 <button id="restartBtn" style="
@@ -152,9 +174,11 @@ window.addEventListener("mousemove", (e) => {
   if (!gameActive) return;
 
   const bounds = getGoalBounds();
+
   const goalieWidth = goalie.offsetWidth;
 
   const minX = bounds.left + goalieWidth / 2;
+
   const maxX = bounds.right - goalieWidth / 2;
 
   let x = e.clientX;
@@ -171,14 +195,16 @@ function resetBall() {
   ball.style.opacity = "0";
 
   ball.style.left = window.innerWidth / 2 + "px";
+
   ball.style.top = window.innerHeight - 60 + "px";
 
 }
 
-// 🧤 REALISTIC HITBOX
+// 🧤 HITBOX
 function checkGoalieHit(ballRect, goalieRect) {
 
   const paddingX = goalieRect.width * 0.25;
+
   const paddingY = goalieRect.height * 0.35;
 
   const hitbox = {
@@ -196,6 +222,69 @@ function checkGoalieHit(ballRect, goalieRect) {
   );
 }
 
+// 🎉 HEXAGON CONFETTI
+function launchConfetti() {
+
+  for (let i = 0; i < 120; i++) {
+
+    const confetti = document.createElement("div");
+
+    confetti.classList.add("confetti");
+
+    // ⚫⚪ BLACK OR WHITE
+    const colors = ["black", "white"];
+
+    confetti.style.background =
+      colors[Math.floor(Math.random() * colors.length)];
+
+    confetti.style.left =
+      Math.random() * window.innerWidth + "px";
+
+    confetti.style.transform =
+      `rotate(${Math.random() * 360}deg)`;
+
+    document.body.appendChild(confetti);
+
+    let y = -30;
+
+    let xDrift = (Math.random() - 0.5) * 4;
+
+    let speed =
+      Math.random() * 4 + 2;
+
+    let rotation =
+      Math.random() * 8;
+
+    const fall = setInterval(() => {
+
+      y += speed;
+
+      let currentLeft =
+        parseFloat(confetti.style.left);
+
+      currentLeft += xDrift;
+
+      confetti.style.top = y + "px";
+
+      confetti.style.left = currentLeft + "px";
+
+      confetti.style.transform =
+        `rotate(${y * rotation}deg)`;
+
+      if (y > window.innerHeight + 40) {
+
+        clearInterval(fall);
+
+        confetti.remove();
+
+      }
+
+    }, 20);
+
+  }
+
+}
+
 // ⚽ SHOOT BALL
 function shootBall() {
 
@@ -209,7 +298,8 @@ function shootBall() {
     window.innerWidth * 0.8
   ];
 
-  let x = startZones[Math.floor(Math.random() * startZones.length)];
+  let x =
+    startZones[Math.floor(Math.random() * startZones.length)];
 
   let y = window.innerHeight - 60;
 
@@ -234,9 +324,11 @@ function shootBall() {
     y -= window.innerHeight * 0.015;
 
     ball.style.top = y + "px";
+
     ball.style.left = x + "px";
 
     const ballRect = ball.getBoundingClientRect();
+
     const goalieRect = goalie.getBoundingClientRect();
 
     // 🧤 SAVE
@@ -246,16 +338,20 @@ function shootBall() {
 
       saves++;
 
-      counterText.textContent = `Saves: ${saves}/3`;
+      counterText.textContent =
+        `Saves: ${saves}/3`;
 
       // 🏆 WIN
       if (saves >= 3) {
 
         gameActive = false;
 
-        message.textContent = "🎉 Happy Birthday, Fiks!";
+        message.textContent =
+          "🎉 Happy Birthday, Fiks!";
 
         restartBtn.style.display = "block";
+
+        launchConfetti();
 
         return;
       }
@@ -275,9 +371,11 @@ function shootBall() {
       ball.style.opacity = "0";
 
       setTimeout(shootBall, 800);
+
     }
 
   }, 20);
+
 }
 
 // ▶ START GAME
