@@ -171,14 +171,19 @@ function resetBall() {
 
 // 🧤 HIT DETECTION
 function checkGoalieHit(ballRect, goalieRect) {
-  const paddingX = goalieRect.width * 0.25;
-  const paddingY = goalieRect.height * 0.35;
 
-  return (
-    ballRect.right > goalieRect.left + paddingX &&
-    ballRect.left < goalieRect.right - paddingX &&
-    ballRect.bottom > goalieRect.top + paddingY
-  );
+  // ⚽ BALL center point (more accurate than edges)
+  const ballCenterX = (ballRect.left + ballRect.right) / 2;
+  const ballCenterY = (ballRect.top + ballRect.bottom) / 2;
+
+  // 🧤 STRICT GOALIE HITBOX (no padding cheating)
+  const hit =
+    ballCenterX > goalieRect.left &&
+    ballCenterX < goalieRect.right &&
+    ballCenterY > goalieRect.top &&
+    ballCenterY < goalieRect.bottom;
+
+  return hit;
 }
 
 // 🧤 JUMP ANIMATION
