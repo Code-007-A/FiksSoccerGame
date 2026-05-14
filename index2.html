@@ -1,20 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Soccer Save Game</title>
+
+<style>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+  font-family: Arial;
+  background: #0b6623;
+}
+
+.goal {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+  height: 160px;
+  border: 4px solid white;
+
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.25) 1px, transparent 1px);
+
+  background-size: 20px 20px;
+}
+
+#goalie {
+  position: absolute;
+  top: 70px;
+  width: 168px;
+  transform: translateX(-50%);
+}
+
+#ball {
+  position: absolute;
+  width: 35px;
+  height: 35px;
+}
+
+#message {
+  position: absolute;
+  top: 200px;
+  width: 100%;
+  text-align: center;
+  font-size: 36px;
+  color: white;
+  animation: flicker 0.2s infinite;
+}
+
+#counter {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 22px;
+  color: white;
+}
+
+#startScreen {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#instructions {
+  color: white;
+  font-size: 20px;
+  margin: 15px;
+  text-align: center;
+}
+
+#startBtn, #restartBtn {
+  padding: 18px 36px;
+  font-size: 25px;
+  cursor: pointer;
+}
+
+#restartBtn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+}
+
+.confetti {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  top: -30px;
+  clip-path: polygon(
+    25% 0%, 75% 0%,
+    100% 50%,
+    75% 100%,
+    25% 100%,
+    0% 50%
+  );
+}
+
+@keyframes flicker {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="startScreen">
+  <h1 style="color:white;">Fik's Soccer Game</h1>
+  <p id="instructions">Move mouse left/right to block the ball</p>
+  <button id="startBtn">Start Game</button>
+</div>
+
+<div class="goal"></div>
+
+<img id="goalie" src="goalie.png">
+<img id="ball" src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg">
+
+<div id="message"></div>
+<div id="counter">Saves: 0/3</div>
+
+<button id="restartBtn">Start Over</button>
+
 <script>
 
-// 🔊 SOUND 01 (save sound)
-const saveSound = new Audio();
-saveSound.src = "sound01.mp3";
-saveSound.preload = "auto";
-saveSound.volume = 1.0;
+const saveSound = new Audio("sound01.mp3");
+saveSound.volume = 1;
 
-// 🎉 SOUND 02 (WIN MUSIC LOOP)
-const winSound = new Audio();
-winSound.src = "sound02.mp3";
-winSound.preload = "auto";
-winSound.volume = 1.0;
+const winSound = new Audio("sound02.mp3");
+winSound.volume = 1;
 winSound.loop = true;
 
 const startScreen = document.getElementById("startScreen");
 const startBtn = document.getElementById("startBtn");
+const restartBtn = document.getElementById("restartBtn");
 
 const goalie = document.getElementById("goalie");
 const ball = document.getElementById("ball");
@@ -23,296 +157,160 @@ const goal = document.querySelector(".goal");
 const counterText = document.getElementById("counter");
 const message = document.getElementById("message");
 
-const restartBtn = document.getElementById("restartBtn");
-
 let saves = 0;
 let gameActive = false;
 
-let goalieX = window.innerWidth / 2;
-
-let jumpAnim = null;
-
-// 🧠 GOAL BOUNDS
 function getGoalBounds() {
   return goal.getBoundingClientRect();
 }
 
-// 🧤 MOUSE CONTROL
 window.addEventListener("mousemove", (e) => {
-
   if (!gameActive) return;
 
   const bounds = getGoalBounds();
-
-  const goalieWidth = goalie.offsetWidth;
-
-  const minX = bounds.left + goalieWidth / 2;
-  const maxX = bounds.right - goalieWidth / 2;
+  const w = goalie.offsetWidth;
 
   let x = e.clientX;
+  x = Math.max(bounds.left + w/2, Math.min(bounds.right - w/2, x));
 
-  goalieX = Math.max(minX, Math.min(maxX, x));
-
-  goalie.style.left = goalieX + "px";
-
+  goalie.style.left = x + "px";
 });
 
-// ⚽ RESET BALL
 function resetBall() {
-
   ball.style.opacity = "0";
-
   ball.style.left = window.innerWidth / 2 + "px";
-
   ball.style.top = window.innerHeight - 60 + "px";
-
 }
 
-// 🧤 COLLISION
-function checkGoalieHit(ballRect, goalieRect) {
-
-  const ballCenterX =
-    (ballRect.left + ballRect.right) / 2;
-
-  const ballCenterY =
-    (ballRect.top + ballRect.bottom) / 2;
+function hit(ballRect, goalieRect) {
+  const cx = (ballRect.left + ballRect.right) / 2;
+  const cy = (ballRect.top + ballRect.bottom) / 2;
 
   return (
-    ballCenterX > goalieRect.left &&
-    ballCenterX < goalieRect.right &&
-    ballCenterY > goalieRect.top &&
-    ballCenterY < goalieRect.bottom
+    cx > goalieRect.left &&
+    cx < goalieRect.right &&
+    cy > goalieRect.top &&
+    cy < goalieRect.bottom
   );
 }
 
-// 🧤 JUMP
-function startJump() {
-
-  if (jumpAnim) return;
-
-  jumpAnim = setInterval(() => {
-
-    goalie.src =
-      goalie.src.includes("goalie.png")
-        ? "jump.png"
-        : "goalie.png";
-
-  }, 400);
-
-}
-
-function stopJump() {
-
-  clearInterval(jumpAnim);
-
-  jumpAnim = null;
-
-  goalie.src = "goalie.png";
-
-}
-
-// 🎉 CONFETTI
-function launchConfetti() {
-
-  for (let i = 0; i < 120; i++) {
-
+function confetti() {
+  for (let i = 0; i < 100; i++) {
     const c = document.createElement("div");
-
-    c.classList.add("confetti");
-
-    c.style.background =
-      Math.random() > 0.5 ? "black" : "white";
-
-    c.style.left =
-      Math.random() * window.innerWidth + "px";
-
+    c.className = "confetti";
+    c.style.background = Math.random() > 0.5 ? "black" : "white";
+    c.style.left = Math.random() * window.innerWidth + "px";
     document.body.appendChild(c);
 
     let y = -30;
-
     let x = parseFloat(c.style.left);
 
-    let drift = (Math.random() - 0.5) * 4;
-
-    let speed = Math.random() * 4 + 2;
-
     const fall = setInterval(() => {
-
-      y += speed;
-
-      x += drift;
+      y += 4;
+      x += (Math.random() - 0.5) * 3;
 
       c.style.top = y + "px";
-
       c.style.left = x + "px";
 
       if (y > window.innerHeight) {
-
         clearInterval(fall);
-
         c.remove();
-
       }
-
     }, 20);
-
   }
-
 }
 
-// ⚽ SHOOT BALL
-function shootBall() {
+function shoot() {
 
   if (!gameActive) return;
 
-  const goalRect = getGoalBounds();
+  const g = getGoalBounds();
 
-  let x =
-    window.innerWidth * (0.2 + Math.random() * 0.6);
-
+  let x = window.innerWidth * (0.2 + Math.random() * 0.6);
   let y = window.innerHeight - 60;
 
   ball.style.opacity = "1";
 
-  const targetX =
-    goalRect.left + Math.random() * goalRect.width;
+  const targetX = g.left + Math.random() * g.width;
 
-  let velocityX = 0;
+  const speedY = window.innerHeight * 0.018;
+  let vx = 0;
 
-  let speedY =
-    window.innerHeight * 0.018;
+  const loop = setInterval(() => {
 
-  const interval = setInterval(() => {
-
-    velocityX +=
-      (targetX > x ? 1 : -1) * 0.3;
-
-    x += velocityX;
-
+    vx += (targetX > x ? 1 : -1) * 0.3;
+    x += vx;
     y -= speedY;
 
     ball.style.left = x + "px";
-
     ball.style.top = y + "px";
 
-    const ballRect =
-      ball.getBoundingClientRect();
+    const br = ball.getBoundingClientRect();
+    const gr = goalie.getBoundingClientRect();
 
-    const goalieRect =
-      goalie.getBoundingClientRect();
+    if (hit(br, gr)) {
 
-    // 🧤 SAVE
-    if (checkGoalieHit(ballRect, goalieRect)) {
-
-      clearInterval(interval);
+      clearInterval(loop);
 
       saveSound.currentTime = 0;
-      saveSound.play().catch(() => {});
+      saveSound.play();
 
       saves++;
+      counterText.textContent = `Saves: ${saves}/3`;
 
-      counterText.textContent =
-        `Saves: ${saves}/3`;
-
-      // 🏆 WIN CONDITION
       if (saves >= 3) {
 
         gameActive = false;
 
-        message.textContent =
-          "YOU WIN!!! Happy Birthday, Fiks!";
+        message.textContent = "YOU WIN! Happy Birthday Fiks 🎉";
 
         restartBtn.style.display = "block";
 
-        startJump();
-        launchConfetti();
+        confetti();
 
-        // 🔊 PLAY WIN SOUND LOOP
         winSound.currentTime = 0;
-        winSound.play().catch(() => {});
+        winSound.play();
 
         return;
       }
 
       ball.style.opacity = "0";
-
-      setTimeout(shootBall, 700);
-
+      setTimeout(shoot, 700);
       return;
     }
 
-    // ❌ MISS
-    if (y <= goalRect.top - 50) {
-
-      clearInterval(interval);
-
+    if (y < g.top - 50) {
+      clearInterval(loop);
       ball.style.opacity = "0";
-
-      setTimeout(shootBall, 700);
-
+      setTimeout(shoot, 700);
     }
 
   }, 16);
-
 }
 
-// ▶ START
 startBtn.onclick = () => {
-
-  // unlock audio
-  saveSound.play().then(() => {
-    saveSound.pause();
-    saveSound.currentTime = 0;
-  });
-
-  winSound.play().then(() => {
-    winSound.pause();
-    winSound.currentTime = 0;
-  });
-
   startScreen.style.display = "none";
-
   saves = 0;
-
   gameActive = true;
-
   counterText.textContent = "Saves: 0/3";
-
   message.textContent = "";
-
   restartBtn.style.display = "none";
-
   resetBall();
-
-  shootBall();
-
+  shoot();
 };
 
-// 🔄 RESTART
 restartBtn.onclick = () => {
-
   gameActive = false;
-
   startScreen.style.display = "flex";
-
   saves = 0;
-
-  counterText.textContent = "Saves: 0/3";
-
-  message.textContent = "";
-
-  restartBtn.style.display = "none";
-
-  stopJump();
-
   winSound.pause();
   winSound.currentTime = 0;
-
   resetBall();
-
 };
 
-// INIT
 window.onload = resetBall;
 
 </script>
+
+</body>
+</html>
