@@ -195,28 +195,55 @@ function hit(ballRect, goalieRect) {
 }
 
 function confetti() {
-  for (let i = 0; i < 100; i++) {
+
+  for (let i = 0; i < 140; i++) {
+
     const c = document.createElement("div");
     c.className = "confetti";
-    c.style.background = Math.random() > 0.5 ? "black" : "white";
+
+    // 🎨 random colors (black / white + slight gray for realism)
+    const colors = ["black", "white", "#dddddd"];
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+
+    // 📏 random size (IMPORTANT FIX)
+    const size = Math.random() * 10 + 6;
+    c.style.width = size + "px";
+    c.style.height = size + "px";
+
+    // 📍 random starting position
     c.style.left = Math.random() * window.innerWidth + "px";
+
+    // 🔄 random rotation
+    let rotation = Math.random() * 360;
+
     document.body.appendChild(c);
 
-    let y = -30;
+    let y = -50;
     let x = parseFloat(c.style.left);
 
+    const fallSpeed = Math.random() * 3 + 2;
+    const drift = (Math.random() - 0.5) * 2;
+
+    const spinSpeed = (Math.random() - 0.5) * 10;
+
     const fall = setInterval(() => {
-      y += 4;
-      x += (Math.random() - 0.5) * 3;
+
+      y += fallSpeed;
+      x += drift;
+      rotation += spinSpeed;
 
       c.style.top = y + "px";
       c.style.left = x + "px";
+
+      // 🔄 REAL ROTATION (this fixes “blocky” look)
+      c.style.transform = `rotate(${rotation}deg)`;
 
       if (y > window.innerHeight) {
         clearInterval(fall);
         c.remove();
       }
-    }, 20);
+
+    }, 16);
   }
 }
 
