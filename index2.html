@@ -195,38 +195,61 @@ function hit(ballRect, goalieRect) {
 
 // 🎉 CONFETTI (FIXED NATURAL)
 function confetti() {
-  for (let i = 0; i < 120; i++) {
+
+  for (let i = 0; i < 140; i++) {
 
     const c = document.createElement("div");
     c.className = "confetti";
 
-    c.style.background = Math.random() > 0.5 ? "black" : "white";
+    // 🎨 color variation
+    c.style.background =
+      Math.random() > 0.5 ? "black" : "white";
 
-    const size = Math.random() * 8 + 4;
+    // 📏 size variation (important for realism)
+    const size = Math.random() * 6 + 3;
     c.style.width = size + "px";
     c.style.height = size + "px";
 
-    c.style.left = Math.random() * window.innerWidth + "px";
+    // 📍 start position
+    let x = Math.random() * window.innerWidth;
+    let y = -20;
+
+    c.style.left = x + "px";
+    c.style.top = y + "px";
 
     document.body.appendChild(c);
 
-    let y = -20;
-    let x = parseFloat(c.style.left);
-    let rot = Math.random() * 360;
+    // 🔄 motion values
+    let rotation = Math.random() * 360;
+
+    let vx = (Math.random() - 0.5) * 2.5;   // horizontal drift
+    let vy = Math.random() * 2 + 1.5;       // gravity speed
+    let wind = (Math.random() - 0.5) * 0.3; // slow wind shift
 
     const fall = setInterval(() => {
-      y += Math.random() * 3 + 2;
-      x += (Math.random() - 0.5) * 2;
-      rot += Math.random() * 10;
 
-      c.style.top = y + "px";
+      // 🌪 wind changes slightly over time (real drift effect)
+      vx += wind * 0.05;
+
+      x += vx;
+      y += vy;
+
+      rotation += vx * 2;
+
       c.style.left = x + "px";
-      c.style.transform = `rotate(${rot}deg)`;
+      c.style.top = y + "px";
+      c.style.transform = `rotate(${rotation}deg)`;
+
+      // 🌬 fade-out near bottom (more natural exit)
+      if (y > window.innerHeight * 0.8) {
+        c.style.opacity = "0.6";
+      }
 
       if (y > window.innerHeight) {
         clearInterval(fall);
         c.remove();
       }
+
     }, 16);
   }
 }
