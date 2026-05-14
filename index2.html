@@ -12,7 +12,6 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  position: fixed;
   font-family: Arial;
   background: #0b6623;
 }
@@ -98,16 +97,9 @@ html, body {
 
 .confetti {
   position: absolute;
-  width: 40px;
-  height: 40px;
-  top: -30px;
-  clip-path: polygon(
-    25% 0%, 75% 0%,
-    100% 50%,
-    75% 100%,
-    25% 100%,
-    0% 50%
-  );
+  width: 12px;
+  height: 12px;
+  top: -20px;
 }
 
 @keyframes flicker {
@@ -139,6 +131,7 @@ html, body {
 
 <script>
 
+// 🔊 SOUNDS
 const saveSound = new Audio("sound01.mp3");
 saveSound.volume = 1;
 
@@ -146,6 +139,7 @@ const winSound = new Audio("sound02.mp3");
 winSound.volume = 1;
 winSound.loop = true;
 
+// ELEMENTS
 const startScreen = document.getElementById("startScreen");
 const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
@@ -159,11 +153,14 @@ const message = document.getElementById("message");
 
 let saves = 0;
 let gameActive = false;
+let jumpInterval = null;
 
+// 🧠 GOAL BOUNDS
 function getGoalBounds() {
   return goal.getBoundingClientRect();
 }
 
+// 🧤 MOVE GOALIE
 window.addEventListener("mousemove", (e) => {
   if (!gameActive) return;
 
@@ -176,12 +173,14 @@ window.addEventListener("mousemove", (e) => {
   goalie.style.left = x + "px";
 });
 
+// ⚽ RESET BALL
 function resetBall() {
   ball.style.opacity = "0";
   ball.style.left = window.innerWidth / 2 + "px";
   ball.style.top = window.innerHeight - 60 + "px";
 }
 
+// 🧤 COLLISION
 function hit(ballRect, goalieRect) {
   const cx = (ballRect.left + ballRect.right) / 2;
   const cy = (ballRect.top + ballRect.bottom) / 2;
@@ -194,61 +193,63 @@ function hit(ballRect, goalieRect) {
   );
 }
 
+// 🎉 CONFETTI (FIXED NATURAL)
 function confetti() {
-
-  for (let i = 0; i < 140; i++) {
+  for (let i = 0; i < 120; i++) {
 
     const c = document.createElement("div");
     c.className = "confetti";
 
-    // 🎨 random colors (black / white + slight gray for realism)
-    const colors = ["black", "white", "#dddddd"];
-    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.background = Math.random() > 0.5 ? "black" : "white";
 
-    // 📏 random size (IMPORTANT FIX)
-    const size = Math.random() * 10 + 6;
+    const size = Math.random() * 8 + 4;
     c.style.width = size + "px";
     c.style.height = size + "px";
 
-    // 📍 random starting position
     c.style.left = Math.random() * window.innerWidth + "px";
-
-    // 🔄 random rotation
-    let rotation = Math.random() * 360;
 
     document.body.appendChild(c);
 
-    let y = -50;
+    let y = -20;
     let x = parseFloat(c.style.left);
-
-    const fallSpeed = Math.random() * 3 + 2;
-    const drift = (Math.random() - 0.5) * 2;
-
-    const spinSpeed = (Math.random() - 0.5) * 10;
+    let rot = Math.random() * 360;
 
     const fall = setInterval(() => {
-
-      y += fallSpeed;
-      x += drift;
-      rotation += spinSpeed;
+      y += Math.random() * 3 + 2;
+      x += (Math.random() - 0.5) * 2;
+      rot += Math.random() * 10;
 
       c.style.top = y + "px";
       c.style.left = x + "px";
-
-      // 🔄 REAL ROTATION (this fixes “blocky” look)
-      c.style.transform = `rotate(${rotation}deg)`;
+      c.style.transform = `rotate(${rot}deg)`;
 
       if (y > window.innerHeight) {
         clearInterval(fall);
         c.remove();
       }
-
     }, 16);
   }
 }
 
-function shoot() {
+// 🧤 JUMP LOOP
+function startJump() {
+  if (jumpInterval) return;
 
+  jumpInterval = setInterval(() => {
+    goalie.src = goalie.src.includes("goalie.png")
+      ? "jump.png"
+      : "goalie.png";
+  }, 300);
+}
+
+function stopJump() {
+  clearInterval(jumpInterval);
+  jumpInterval = null;
+  goalie.src = "goalie.png";
+}
+
+// ⚽ SHOOT BALL
+function shoot() {
   if (!gameActive) return;
 
   const g = getGoalBounds();
@@ -259,7 +260,6 @@ function shoot() {
   ball.style.opacity = "1";
 
   const targetX = g.left + Math.random() * g.width;
-
   const speedY = window.innerHeight * 0.018;
   let vx = 0;
 
@@ -294,6 +294,7 @@ function shoot() {
         restartBtn.style.display = "block";
 
         confetti();
+        startJump();
 
         winSound.currentTime = 0;
         winSound.play();
@@ -315,6 +316,7 @@ function shoot() {
   }, 16);
 }
 
+// ▶ START
 startBtn.onclick = () => {
   startScreen.style.display = "none";
   saves = 0;
@@ -326,12 +328,16 @@ startBtn.onclick = () => {
   shoot();
 };
 
+// 🔄 RESTART
 restartBtn.onclick = () => {
   gameActive = false;
   startScreen.style.display = "flex";
   saves = 0;
+
+  stopJump();
   winSound.pause();
   winSound.currentTime = 0;
+
   resetBall();
 };
 
