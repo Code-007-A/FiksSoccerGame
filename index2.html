@@ -97,9 +97,19 @@ html, body {
 
 .confetti {
   position: absolute;
-  width: 25px;
-  height: 25px;
   top: -20px;
+
+  width: 10px;
+  height: 10px;
+
+  clip-path: polygon(
+    25% 0%,
+    75% 0%,
+    100% 50%,
+    75% 100%,
+    25% 100%,
+    0% 50%
+  );
 }
 
 @keyframes flicker {
