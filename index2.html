@@ -1,171 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Soccer Save Game</title>
-
-<style>
-
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  position: fixed;
-  touch-action: none;
-  font-family: Arial;
-  background: #0b6623;
-}
-
-.goal {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 900px;
-  height: 160px;
-  border: 4px solid white;
-
-  background-image:
-    linear-gradient(to right, rgba(255,255,255,0.25) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.25) 1px, transparent 1px);
-
-  background-size: 20px 20px;
-}
-
-#goalie {
-  position: absolute;
-  top: 70px;
-  width: 168px;
-  transform: translateX(-50%);
-}
-
-#ball {
-  position: absolute;
-  width: 35px;
-  height: 35px;
-}
-
-#message {
-  position: absolute;
-  top: 200px;
-  width: 100%;
-  text-align: center;
-  font-size: 36px;
-  color: white;
-  animation: flicker 0.2s infinite;
-}
-
-#counter {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  font-size: 22px;
-  color: white;
-}
-
-#startScreen {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-#instructions {
-  color: white;
-  font-size: 22px;
-  text-align: center;
-  max-width: 600px;
-  margin: 20px;
-}
-
-#startBtn, #restartBtn {
-  padding: 18px 36px;
-  font-size: 25px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-#restartBtn {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: none;
-  z-index: 200;
-}
-
-.confetti {
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  top: -30px;
-
-  clip-path: polygon(
-    25% 0%, 75% 0%,
-    100% 50%,
-    75% 100%,
-    25% 100%,
-    0% 50%
-  );
-}
-
-@keyframes flicker {
-  0%   { opacity: 1; }
-  25%  { opacity: 0; }
-  50%  { opacity: 1; }
-  75%  { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-</style>
-</head>
-
-<body>
-
-<div id="startScreen">
-
-  <h1 style="color:white;">Fik's Soccer Game</h1>
-
-  <p id="instructions">
-    Move your mouse left and right to block soccer ball.
-  </p>
-
-  <button id="startBtn">
-    Start Game
-  </button>
-
-</div>
-
-<div class="goal"></div>
-
-<img id="goalie" src="goalie.png">
-
-<img id="ball"
-src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg">
-
-<div id="message"></div>
-
-<div id="counter">Saves: 0/3</div>
-
-<button id="restartBtn">
-  Start Over
-</button>
-
 <script>
 
-// 🔊 SOUND FIXED VERSION
+// 🔊 SOUND 01 (save sound)
 const saveSound = new Audio();
-
 saveSound.src = "sound01.mp3";
 saveSound.preload = "auto";
 saveSound.volume = 1.0;
+
+// 🎉 SOUND 02 (WIN MUSIC LOOP)
+const winSound = new Audio();
+winSound.src = "sound02.mp3";
+winSound.preload = "auto";
+winSound.volume = 1.0;
+winSound.loop = true;
 
 const startScreen = document.getElementById("startScreen");
 const startBtn = document.getElementById("startBtn");
@@ -222,7 +68,7 @@ function resetBall() {
 
 }
 
-// 🧤 REAL COLLISION
+// 🧤 COLLISION
 function checkGoalieHit(ballRect, goalieRect) {
 
   const ballCenterX =
@@ -239,7 +85,7 @@ function checkGoalieHit(ballRect, goalieRect) {
   );
 }
 
-// 🧤 JUMP ANIMATION
+// 🧤 JUMP
 function startJump() {
 
   if (jumpAnim) return;
@@ -360,19 +206,15 @@ function shootBall() {
 
       clearInterval(interval);
 
-      // 🔊 PLAY SOUND
       saveSound.currentTime = 0;
-
-      saveSound.play().catch(err => {
-        console.log("Audio error:", err);
-      });
+      saveSound.play().catch(() => {});
 
       saves++;
 
       counterText.textContent =
         `Saves: ${saves}/3`;
 
-      // 🏆 WIN
+      // 🏆 WIN CONDITION
       if (saves >= 3) {
 
         gameActive = false;
@@ -383,8 +225,11 @@ function shootBall() {
         restartBtn.style.display = "block";
 
         startJump();
-
         launchConfetti();
+
+        // 🔊 PLAY WIN SOUND LOOP
+        winSound.currentTime = 0;
+        winSound.play().catch(() => {});
 
         return;
       }
@@ -414,10 +259,15 @@ function shootBall() {
 // ▶ START
 startBtn.onclick = () => {
 
-  // 🔓 unlock browser audio
+  // unlock audio
   saveSound.play().then(() => {
     saveSound.pause();
     saveSound.currentTime = 0;
+  });
+
+  winSound.play().then(() => {
+    winSound.pause();
+    winSound.currentTime = 0;
   });
 
   startScreen.style.display = "none";
@@ -455,18 +305,14 @@ restartBtn.onclick = () => {
 
   stopJump();
 
+  winSound.pause();
+  winSound.currentTime = 0;
+
   resetBall();
 
 };
 
 // INIT
-window.onload = () => {
-
-  resetBall();
-
-};
+window.onload = resetBall;
 
 </script>
-
-</body>
-</html>
